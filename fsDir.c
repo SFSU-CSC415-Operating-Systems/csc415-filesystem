@@ -26,11 +26,15 @@ int init_root()
     //     char name[43];		// name of file
     //     } DE;
 
+    // root "." entry initialization
     root[0].size = blocks_needed * fs_vcb->block_size;
     root[0].loc = 1
 
+    // next write root ".." entry initialization
+
+    // then write a loop to initialize all other entries to a free state
     for (int i = 0; i < DE_COUNT; i++)
         {
-        root[]
+        
         }
     }

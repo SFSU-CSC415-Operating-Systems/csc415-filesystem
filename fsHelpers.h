@@ -1,0 +1,1 @@
+int get_num_blocks(int bytes, int block_size);

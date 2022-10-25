@@ -1,9 +1,9 @@
 /**************************************************************
-* Class:  CSC-415-0# Fall 2021
-* Names: 
-* Student IDs:
-* GitHub Name:
-* Group Name:
+* Class:  CSC-415-02 Fall 2021
+* Names: Mark Kim, Peter Truong, Chengkai Yang, Zeel Diyora
+* Student IDs: 918204214
+* GitHub Name: mkim797
+* Group Name: Diligence
 * Project: Basic File System
 *
 * File: b_io.c
@@ -53,7 +53,7 @@ b_io_fd b_getFCB ()
 	{
 	for (int i = 0; i < MAXFCBS; i++)
 		{
-		if (fcbArray[i].buff == NULL)
+		if (fcbArray[i].buf == NULL)
 			{
 			return i;		//Not thread safe (But do not worry about it for this assignment)
 			}

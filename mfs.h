@@ -54,6 +54,31 @@ typedef struct
 	uint64_t	directoryStartLocation;		/*Starting LBA of directory */
 	} fdDir;
 
+// This is the directory entry structure for the file system
+// This struct is exactly 64 bytes in size
+typedef struct
+	{
+	int size;			// size of the file
+	int loc;			// block location of file
+	time_t created;		// time file was created
+	time_t modified;	// time file was last modified
+	time_t accessed;	// time file was last accessed
+	char attr;			// attributes of file ('d': directory, 'f': file)
+	char name[43];		// name of file
+	} DE;
+
+// This is the volume control block structure for the file system
+typedef struct
+	{
+	int number_of_blocks;
+	int block_size;
+	int freespace_loc;
+	int root_loc;
+	long magic;
+	} VCB;
+
+VCB * fs_vcb;
+
 // Key directory functions
 int fs_mkdir(const char *pathname, mode_t mode);
 int fs_rmdir(const char *pathname);

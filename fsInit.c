@@ -55,7 +55,7 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 		fs_vcb->magic = 678267415;
 		fs_vcb->number_of_blocks = numberOfBlocks;
 		fs_vcb->block_size = blockSize;
-		fs_vcb->freespace_loc = init_freespace(fs_vcb);
+		fs_vcb->freespace_loc = init_free(fs_vcb);
 		}
 
 

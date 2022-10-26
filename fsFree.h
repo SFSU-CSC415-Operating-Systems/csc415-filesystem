@@ -1,3 +1,3 @@
-int get_num_blocks(int bytes, int block_size);
+int *freespace;
 
-int init_freespace(VCB *vcb);
+int init_free();

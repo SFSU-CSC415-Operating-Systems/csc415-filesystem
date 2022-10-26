@@ -27,10 +27,10 @@ int init_root()
     //     } DE;
 
     root[0].size = blocks_needed * fs_vcb->block_size;
-    root[0].loc = 1
+    root[0].loc = 0;
 
     for (int i = 0; i < DE_COUNT; i++)
         {
-        root[]
+        ;
         }
     }

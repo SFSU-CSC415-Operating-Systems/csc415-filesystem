@@ -54,6 +54,12 @@ typedef struct
 	uint64_t	directoryStartLocation;		/*Starting LBA of directory */
 	} fdDir;
 
+// Global declaration of volume control block (should be accessible everywhere)
+VCB * fs_vcb;
+
+// Global declaration of the freespace (should be accessible everywhere)
+int *freespace;
+
 // This is the directory entry structure for the file system
 // This struct is exactly 64 bytes in size
 typedef struct
@@ -74,12 +80,10 @@ typedef struct
 	int block_size;			// size of each block in the file system
 	int freespace_loc;		// location of the first block of the freespace
 	int freespace_first;	// reference to the first free block in the drive
+	int freespace_avail;	// number of blocks available in freespace
 	int root_loc;			// block location of root
 	long magic;				// unique volume identifier
 	} VCB;
-
-// Global declaration of volume control block (should be accessible everywhere)
-VCB * fs_vcb;
 
 // Key directory functions
 int fs_mkdir(const char *pathname, mode_t mode);

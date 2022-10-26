@@ -75,7 +75,7 @@ int alloc_free(VCB *fs_vcb, int *freespace, int numberOfBlocks)
     if (fs_vcb->freespace_avail < numberOfBlocks)
         {
         perror("Not enough freespace available.\n");
-        printf("Need %d more blocks", numberOfBlocks - fs_vcb->freespace_avail);
+        printf("Need %d more blocks\n", numberOfBlocks - fs_vcb->freespace_avail);
         return -1;
         }
 
@@ -92,7 +92,7 @@ int alloc_free(VCB *fs_vcb, int *freespace, int numberOfBlocks)
         curr = next;
         next = freespace[next];
         }
-    printf("Current block to be set to end: %d", curr);
+    printf("Current block to be set to end: %d\n", curr);
     freespace[curr] = 0xFFFE;
     fs_vcb->freespace_avail -= numberOfBlocks;
 

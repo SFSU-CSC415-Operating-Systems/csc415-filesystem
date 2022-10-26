@@ -35,10 +35,5 @@ int init_root()
     // then write a loop to initialize all other entries to a free state
     for (int i = 0; i < DE_COUNT; i++)
         {
-<<<<<<< HEAD
-        ;
-=======
-        
->>>>>>> de80e9c (add some comments to list to-dos)
         }
     }

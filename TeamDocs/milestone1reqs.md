@@ -15,7 +15,11 @@ The submission for this assignment is the team github (the github of one of the 
 5. A table of who worked on which components
 6. How did your team work together, how often you met, how did you meet, how did you divide up the tasks.
 <<<<<<< HEAD
+<<<<<<< HEAD
 7. A discussion of what issues you faced and how your team resolved them.
 =======
 7. A discussion of what issues you faced and how your team resolved them.
 >>>>>>> c2c95aa (Update milestone1reqs.md)
+=======
+7. A discussion of what issues you faced and how your team resolved them.
+>>>>>>> fe9c8ae50d68e6c92e33f3a46feabaedbfaff68a

@@ -54,12 +54,6 @@ typedef struct
 	uint64_t	directoryStartLocation;		/*Starting LBA of directory */
 	} fdDir;
 
-// Global declaration of volume control block (should be accessible everywhere)
-VCB * fs_vcb;
-
-// Global declaration of the freespace (should be accessible everywhere)
-int *freespace;
-
 // This is the directory entry structure for the file system
 // This struct is exactly 64 bytes in size
 typedef struct
@@ -69,7 +63,7 @@ typedef struct
 	time_t created;		// time file was created
 	time_t modified;	// time file was last modified
 	time_t accessed;	// time file was last accessed
-	char attr;			// attributes of file ('d': directory, 'f': file)
+	char attr[1];		// attributes of file ('d': directory, 'f': file)
 	char name[43];		// name of file
 	} DE;
 
@@ -81,6 +75,7 @@ typedef struct
 	int freespace_loc;		// location of the first block of the freespace
 	int freespace_first;	// reference to the first free block in the drive
 	int freespace_avail;	// number of blocks available in freespace
+	int freespace_size;		// number of blocks that freespace occupies
 	int root_loc;			// block location of root
 	long magic;				// unique volume identifier
 	} VCB;

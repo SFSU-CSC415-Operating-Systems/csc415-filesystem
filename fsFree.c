@@ -6,56 +6,53 @@
 #include "mfs.h"
 #include "fsHelpers.h"
 
-// freespace variable declared in header "fsFree.h"
-
-// init_free() initializes the freespace as specified in the file system volume
+// Initialize the freespace as specified in the file system volume
 // control block.
-int init_free()
+int init_free(VCB *fs_vcb, int *freespace)
     {
-    printf("***** init_freespace *****\n");
+    printf("***** init_free *****\n");
     
     // Calculate the number of blocks needed for the freespace as specified
     // in the vcb.  Then allocate the freespace in memory.
-    int blocks_needed = get_num_blocks(sizeof(int) * fs_vcb->number_of_blocks,
+    int num_blocks = get_num_blocks(sizeof(int) * fs_vcb->number_of_blocks,
         fs_vcb->block_size);
     freespace = malloc(sizeof(int) * fs_vcb->number_of_blocks);
 
     // Block 0 is the VCB, so the end flag (0xFFFE) is set for this block.
     freespace[0] = 0xFFFE;
 
-    // Set the freespace location to the next block after the VCB.
-    // FREESPACE LOC to the first freespace block? Or should I add a bunch of
-    // freespace data in the VCB to track information about the freespace?
-    // (e.g. freespace size, beginning of actual free space, number of blocks
-    // in freespace, number of blocks left in freespace, contiguous blocks...)
-    fs_vcb->freespace_loc = 1;
-
     // Set the last block of the freespace to the end flag.
-    freespace[blocks_needed] = 0xFFFE;
+    freespace[num_blocks] = 0xFFFE;
     
     // Initialize all other freespace values to the subsequent block
-    for (int i = blocks_needed + 1; i < fs_vcb->number_of_blocks - 1; i++)
+    for (int i = num_blocks + 1; i < fs_vcb->number_of_blocks - 1; i++)
         {
         freespace[i] = i + 1;
         }
 
     // Set a reference to point to the first free block of the drive
-    fs_vcb->freespace_first = blocks_needed + 1;
+    fs_vcb->freespace_first = num_blocks + 1;
+    fs_vcb->freespace_size = num_blocks;
+
+    // Set the number of freespace blocks available (total number of blocks - number
+    // of blocks that the freespace occupies - the single block that the VCB
+    // occupies)
+    fs_vcb->freespace_avail = fs_vcb->number_of_blocks - num_blocks - 1;
 
     // Set last block of the freespace to the end flag
     freespace[fs_vcb->number_of_blocks - 1] = 0xFFFE;
     
     // Write freespace to disk
-    int bytes_written = LBAwrite(freespace, blocks_needed, 1);
+    int blocks_written = LBAwrite(freespace, num_blocks, 1);
 
     // Check if LBAwrite failed
-    if (bytes_written != blocks_needed)
+    if (blocks_written != num_blocks)
         {
         perror("LBAwrite failed\n");
         return -1;
         }
 
-    printf("LBAwrite bytes written: %d", bytes_written);
+    printf("LBAwrite blocks written: %d\n", blocks_written);
     
     return 1;
     }
@@ -63,49 +60,112 @@ int init_free()
 // alloc_free() allocates the numberOfBlocks, and returns the location of the
 // first block of the allocation.  This function also sets the reference to the
 // first block of the remaining free space to
-int alloc_free(int numberOfBlocks)
+int alloc_free(VCB *fs_vcb, int *freespace, int numberOfBlocks)
     {
+    printf("***** alloc_free *****\n");
+
     if (numberOfBlocks < 1)
         {
-        perror("Cannot allocate zero blocks");
+        perror("Cannot allocate zero blocks\n");
         return -1;
         }
     
-    if (blocks_unavailable(numberOfBlocks))
+    if (fs_vcb->freespace_avail < numberOfBlocks)
+        {
+        perror("Not enough freespace available.\n");
+        printf("Need %d more blocks", numberOfBlocks - fs_vcb->freespace_avail);
         return -1;
+        }
 
-    int loc = fs_vcb->freespace_first;
     int curr = fs_vcb->freespace_first;
     int next = freespace[fs_vcb->freespace_first];
-    numberOfBlocks--;
-    while (numberOfBlocks > 0)
+    for (int i = 0; i < fs_vcb->freespace_avail - numberOfBlocks - 1; i++)
         {
+        if (curr == 0xFFFE)
+            {
+            perror("Freespace end flag encountered prematurely\n");
+            return -1;
+            }
         curr = next;
         next = freespace[next];
-        numberOfBlocks--;
         }
     freespace[curr] = 0xFFFE;
-    fs_vcb->freespace_first = next;
+    fs_vcb->freespace_avail -= numberOfBlocks;
 
-    return loc;
+    return next;
     }
 
-int blocks_unavailable(int numberOfBlocks)
+int load_free(VCB *fs_vcb, int *freespace)
     {
-    int curr = fs_vcb->freespace_first;
-    int next = freespace[fs_vcb->freespace_first];
-    numberOfBlocks--;
-    while (numberOfBlocks > 0)
+    printf("***** load_free *****\n");
+    freespace = malloc(sizeof(int) * fs_vcb->number_of_blocks);
+    int blocks_read = LBAread(freespace, fs_vcb->freespace_size, 1);
+
+    if (blocks_read != fs_vcb->freespace_size)
         {
-        curr = next;
-        next = freespace[next];
-        numberOfBlocks--;
-        if (next == 0xFFFE && numberOfBlocks > 0)
-            {
-            perror("Not enough freespace available.\n");
-            printf("Need %d more blocks", numberOfBlocks);
-            return numberOfBlocks;
-            }
+        perror("LBAread failed\n");
+        return -1;
         }
-    return numberOfBlocks;
+
+    return blocks_read;
     }
+
+// void print_free()
+//     {
+//     printf("=================== Printing Freespace Map ===================\n");
+//     printf("Location of start of freespace: %d\n", fs_vcb->freespace_loc);
+//     printf("Size of freespace in blocks:    %d\n", fs_vcb->freespace_size);
+//     printf("Number of available blocks:     %d\n", fs_vcb->freespace_avail);
+//     printf("First free block location:      %d\n", fs_vcb->freespace_first);
+//     for (int i = 0; i < fs_vcb->)
+//     }
+
+/*
+THE FOLLOWING FUNCTIONS ARE FOR FRONT ALLOCATION
+*/
+// int alloc_free(int numberOfBlocks)
+//     {
+//     if (numberOfBlocks < 1)
+//         {
+//         perror("Cannot allocate zero blocks");
+//         return -1;
+//         }
+    
+//     if (blocks_unavailable(numberOfBlocks))
+//         return -1;
+
+//     int loc = fs_vcb->freespace_first;
+//     int curr = fs_vcb->freespace_first;
+//     int next = freespace[fs_vcb->freespace_first];
+//     numberOfBlocks--;
+//     while (numberOfBlocks > 0)
+//         {
+//         curr = next;
+//         next = freespace[next];
+//         numberOfBlocks--;
+//         }
+//     freespace[curr] = 0xFFFE;
+//     fs_vcb->freespace_first = next;
+
+//     return loc;
+//     }
+
+// int blocks_unavailable(int numberOfBlocks)
+//     {
+//     int curr = fs_vcb->freespace_first;
+//     int next = freespace[fs_vcb->freespace_first];
+//     numberOfBlocks--;
+//     while (numberOfBlocks > 0)
+//         {
+//         curr = next;
+//         next = freespace[next];
+//         numberOfBlocks--;
+//         if (next == 0xFFFE && numberOfBlocks > 0)
+//             {
+//             perror("Not enough freespace available.\n");
+//             printf("Need %d more blocks", numberOfBlocks);
+//             return numberOfBlocks;
+//             }
+//         }
+//     return numberOfBlocks;
+//     }

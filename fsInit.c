@@ -24,6 +24,10 @@
 #include "fsLow.h"
 #include "mfs.h"
 #include "fsFree.h"
+#include "fsDir.h"
+
+VCB *fs_vcb;
+int *freespace;
 
 int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 	{
@@ -39,26 +43,40 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 	// check if the volume control block is the one we are looking for
 	if (fs_vcb->magic == 678267415)
 		{
-		// Do something
+		if (load_free(fs_vcb, freespace) != fs_vcb->freespace_size)
+			{
+			perror("Freespace load failed\n");
+			return -1;
+			};
 		}
 	else
 		{
 		// typedef struct
 		// 	{
-		// 	int number_of_blocks;
-		// 	int block_size;
-		// 	int fs_loc;
-		// 	int root_loc;
-		// 	long magic;
+		// 	int number_of_blocks;	// number of blocks in the file system
+		// 	int block_size;			// size of each block in the file system
+		// 	int freespace_loc;		// location of the first block of the freespace
+		// 	int freespace_first;	// reference to the first free block in the drive
+		// 	int freespace_avail;	// number of blocks available in freespace
+		// 	int root_loc;			// block location of root
+		// 	long magic;				// unique volume identifier
 		// 	} VCB;
 
 		fs_vcb->magic = 678267415;
 		fs_vcb->number_of_blocks = numberOfBlocks;
 		fs_vcb->block_size = blockSize;
-		fs_vcb->freespace_loc = init_free(fs_vcb);
+
+		// init_free initializes freespace_first and freespace_avail of the VCB
+		fs_vcb->freespace_loc = init_free(fs_vcb, freespace);
+
+		fs_vcb->root_loc = init_dir(fs_vcb, freespace, 0);
+
+		if (LBAwrite(fs_vcb, 1, 0) != 1)
+			{
+			perror("LBAwrite failed when trying to write the VCB\n");
+			return EXIT_FAILURE;
+			}		
 		}
-
-
 
 	return 0;
 	}
@@ -67,4 +85,18 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 void exitFileSystem ()
 	{
 	printf ("System exiting\n");
+	if (LBAwrite(fs_vcb, 1, 0) != 1)
+		{
+		perror("LBAwrite failed when trying to write the VCB\n");
+		}
+	
+	if (LBAwrite(freespace, fs_vcb->freespace_size, 1) != fs_vcb->freespace_size)
+		{
+		perror("LBAwrite failed when trying to write the freespace\n");
+		}
+	
+	free(freespace);
+	freespace = NULL;
+	free(fs_vcb);
+	fs_vcb = NULL;
 	}

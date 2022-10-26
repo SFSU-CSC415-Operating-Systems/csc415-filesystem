@@ -14,4 +14,8 @@ The submission for this assignment is the team github (the github of one of the 
 4. A description of the Directory system
 5. A table of who worked on which components
 6. How did your team work together, how often you met, how did you meet, how did you divide up the tasks.
+<<<<<<< HEAD
 7. A discussion of what issues you faced and how your team resolved them.
+=======
+7. A discussion of what issues you faced and how your team resolved them.
+>>>>>>> c2c95aa (Update milestone1reqs.md)

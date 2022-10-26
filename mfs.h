@@ -58,13 +58,13 @@ typedef struct
 // This struct is exactly 64 bytes in size
 typedef struct
 	{
-	int size;			// size of the file
-	int loc;			// block location of file
+	char name[32];		// name of file
 	time_t created;		// time file was created
 	time_t modified;	// time file was last modified
 	time_t accessed;	// time file was last accessed
-	char attr[1];		// attributes of file ('d': directory, 'f': file)
-	char name[43];		// name of file
+	unsigned int size;	// size of the file in bytes
+	short loc;			// block location of file
+	char attr[1];		// attributes of file (1: directory, 2: file)
 	} DE;
 
 // This is the volume control block structure for the file system

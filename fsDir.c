@@ -17,9 +17,13 @@ int init_dir(VCB *fs_vcb, int *freespace, int parent_loc)
         printf("***** init_dir *****\n");
 
         int num_blocks = get_num_blocks(sizeof(DE) * DE_COUNT, fs_vcb->block_size);
+        printf("Number of blocks for the root dir: %d\n", num_blocks);
         int num_bytes = num_blocks * fs_vcb->block_size;
+        printf("Number of bytes for the root dir: %d\n", num_bytes);
+        printf("Size of DE: %lu\n", sizeof(DE));
         DE* dir_array = malloc(num_bytes);
         int dir_loc = alloc_free(fs_vcb, freespace, num_blocks);
+        printf("Directory Location: %d\n", dir_loc);
 
         if (dir_loc == -1)
                 {

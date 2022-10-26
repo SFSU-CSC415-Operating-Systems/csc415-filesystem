@@ -56,3 +56,6 @@ dkms.conf
 
 # Created volume
 SampleVolume
+
+# MacOS files
+.DS_Store

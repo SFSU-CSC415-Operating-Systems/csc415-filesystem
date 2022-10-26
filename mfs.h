@@ -70,13 +70,15 @@ typedef struct
 // This is the volume control block structure for the file system
 typedef struct
 	{
-	int number_of_blocks;
-	int block_size;
-	int freespace_loc;
-	int root_loc;
-	long magic;
+	int number_of_blocks;	// number of blocks in the file system
+	int block_size;			// size of each block in the file system
+	int freespace_loc;		// location of the first block of the freespace
+	int freespace_first;	// reference to the first free block in the drive
+	int root_loc;			// block location of root
+	long magic;				// unique volume identifier
 	} VCB;
 
+// Global declaration of volume control block (should be accessible everywhere)
 VCB * fs_vcb;
 
 // Key directory functions

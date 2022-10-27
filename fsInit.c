@@ -26,6 +26,10 @@
 #include "fsFree.h"
 #include "fsDir.h"
 
+// New Edit For Magic number
+//define Magic_Number 678267415 it is 4 bytes
+#define Magic_Number 678267415
+
 VCB *fs_vcb;
 int *freespace;
 
@@ -41,13 +45,14 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 	LBAread(fs_vcb, 1, 0);
 
 	// check if the volume control block is the one we are looking for
-	if (fs_vcb->magic == 678267415)
+	if (Magic_Number == fs_vcb->magic)
 		{
 		if (load_free(fs_vcb, freespace) != fs_vcb->freespace_size)
 			{
 			perror("Freespace load failed\n");
 			return -1;
 			};
+
 		}
 	else
 		{
@@ -61,10 +66,11 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 		// 	int root_loc;			// block location of root
 		// 	long magic;				// unique volume identifier
 		// 	} VCB;
-
-		fs_vcb->magic = 678267415;
-		fs_vcb->number_of_blocks = numberOfBlocks;
-		fs_vcb->block_size = blockSize;
+		
+		// initialize the default values of VCB for file System
+		// fs_vcb->magic = Magic_Number;
+		// fs_vcb->number_of_blocks = numberOfBlocks;
+		// fs_vcb->block_size = blockSize;
 
 		// Calculate the number of blocks needed for the freespace as specified
 		// in the vcb.  Then allocate the freespace in memory.
@@ -81,10 +87,25 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 			{
 			perror("LBAwrite failed when trying to write the VCB\n");
 			return EXIT_FAILURE;
-			}		
+			};		
 		}
 
 	return 0;
+	}
+	
+	//***
+	// initialize VCB but not sure it is conflict with line 81 code
+	int initVCB(uint64_t numberOfBlocks, uint64_t blockSize){
+		fs_vcb->magic = Magic_Number;
+		fs_vcb->number_of_blocks = numberOfBlocks;
+		fs_vcb->block_size = blockSize;
+		// checkout the round up before reach the block count
+		uint64_t bytes = numberOfBlocks / 4;
+		if (numberOfBlocks % 4 >0){
+			bytes++;
+		}
+		fs_vcb->freespace_size = get_num_blocks(bytes);
+		return 0;
 	}
 	
 	

@@ -67,10 +67,10 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 		// 	long magic;				// unique volume identifier
 		// 	} VCB;
 		
-		// initialize the default values of VCB for file System
-		// fs_vcb->magic = Magic_Number;
-		// fs_vcb->number_of_blocks = numberOfBlocks;
-		// fs_vcb->block_size = blockSize;
+		//initialize the default values of VCB for file System
+		fs_vcb->magic = Magic_Number;
+		fs_vcb->number_of_blocks = numberOfBlocks;
+		fs_vcb->block_size = blockSize;
 
 		// Calculate the number of blocks needed for the freespace as specified
 		// in the vcb.  Then allocate the freespace in memory.

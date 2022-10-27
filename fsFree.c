@@ -22,7 +22,7 @@ int init_free(VCB *fs_vcb, int *freespace)
     freespace[0] = 0xFFFE;
 
     // Initialize all other freespace values to the subsequent block
-    for (int i = 1; i < fs_vcb->number_of_blocks - 1; i++)
+    for (int i = 1; i < fs_vcb->number_of_blocks; i++)
         {
         freespace[i] = i + 1;
         }

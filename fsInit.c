@@ -93,21 +93,6 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 	return 0;
 	}
 	
-	//***
-	// initialize VCB but not sure it is conflict with line 81 code
-	int initVCB(uint64_t numberOfBlocks, uint64_t blockSize){
-		fs_vcb->magic = Magic_Number;
-		fs_vcb->number_of_blocks = numberOfBlocks;
-		fs_vcb->block_size = blockSize;
-		// checkout the round up before reach the block count
-		uint64_t bytes = numberOfBlocks / 4;
-		if (numberOfBlocks % 4 >0){
-			bytes++;
-		}
-		fs_vcb->freespace_size = get_num_blocks(bytes);
-		return 0;
-	}
-	
 	
 void exitFileSystem ()
 	{

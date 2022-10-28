@@ -53,6 +53,8 @@ dkms.conf
 
 # Hexdump build
 /Hexdump/hexdump
+*.txt
+!hexdump.txt
 
 # Created volume
 SampleVolume

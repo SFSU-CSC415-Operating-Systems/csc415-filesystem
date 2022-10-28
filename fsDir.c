@@ -35,7 +35,7 @@ int init_dir(VCB *fs_vcb, int *freespace, int parent_loc)
 
         // typedef struct
         //     {
-        //     int size;			// size of the file in bytes
+        //     int size;		// size of the file in bytes
         //     int loc;			// block location of file
         //     time_t created;		// time file was created
         //     time_t modified;	        // time file was last modified
@@ -77,6 +77,21 @@ int init_dir(VCB *fs_vcb, int *freespace, int parent_loc)
         strcpy(dir_array[1].attr, "d");
         strcpy(dir_array[1].name, "..");
 
+        for (int i = 2; i < DE_COUNT; i++)
+                {
+                // Directory "." entry initialization
+                // dir_array[i].size = 0;
+                // dir_array[i].loc = 0;
+                // dir_array[i].created = 0;
+                // dir_array[i].modified = 0;
+                // dir_array[i].accessed = 0;
+                strcpy(dir_array[i].attr, "a");
+                // strcpy(dir_array[i].name, "");
+                }
+
+        print_de(&dir_array[0]);
+        print_de(&dir_array[1]);
+
         int blocks_written = LBAwrite(dir_array, num_blocks, dir_loc);
 
         if (blocks_written != num_blocks)
@@ -91,4 +106,21 @@ int init_dir(VCB *fs_vcb, int *freespace, int parent_loc)
         dir_array = NULL;
                 
         return dir_loc;
+        }
+
+void print_dir(DE* dir_array)
+        {
+        printf("=================== Printing Directory Map ===================\n");
+        printf("Directory Location: %d\n\nindex  Size    Loc     Att\n", dir_array[0].loc);
+        for (int i = 0; i < 40; i++)
+                {
+                printf("%2d     %#06x  %#06x  %s\n", i, dir_array[i].size, dir_array[i].loc, dir_array[i].attr);
+                }
+        }
+
+void print_de(DE *dir)
+        {
+        printf("=================== Printing Directory Entry ===================\n");
+        printf("Size: %d\nLocation: %d\nCreated: %ld\nModified: %ld\nAccessed: %ld\nAttribute: %s\nName: %s\n",
+                dir->size, dir->loc, dir->created, dir->modified, dir->accessed, dir->attr, dir->name);
         }

@@ -68,8 +68,6 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 
 		// Calculate the number of blocks needed for the freespace as specified
 		// in the vcb.  Then allocate the freespace in memory.
-		int num_blocks = get_num_blocks(sizeof(int) * fs_vcb->number_of_blocks,
-			fs_vcb->block_size);
 		freespace = malloc(sizeof(int) * fs_vcb->number_of_blocks);
 
 		// init_free initializes freespace_first and freespace_avail of the VCB

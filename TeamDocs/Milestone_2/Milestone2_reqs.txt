@@ -1,0 +1,20 @@
+FileSystem - Milestone Two  - Due November 3, 2022
+
+This will not be turned in.  You should be at the point where you have the file fsshell integrated into your file system and you can to make directory (md), list directory (ls), print working directory (pwd) and change directory (cd).
+
+This means that the following functions must be implemented and functional:
+
+    fs_setcwd
+    fs_getcwd
+    fs_isFile
+    fs_isDir
+    fs_mkdir
+    fs_opendir
+    fs_readdir
+    fs_closedir
+    fs_stat
+
+And optimally complete
+
+    fs_delete
+    fs_rmdir

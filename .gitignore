@@ -55,6 +55,7 @@ dkms.conf
 /Hexdump/hexdump
 *.txt
 !hexdump.txt
+!Milestone*reqs.txt
 
 # Created volume
 SampleVolume

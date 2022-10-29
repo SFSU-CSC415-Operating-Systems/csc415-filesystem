@@ -55,7 +55,7 @@ typedef struct
 	} fdDir;
 
 // This is the directory entry structure for the file system
-// This struct is exactly 64 bytes in size
+// This struct is exactly 63 bytes in size
 typedef struct
 	{
 	char name[32];		// name of file
@@ -72,7 +72,7 @@ typedef struct
 	{
 	int number_of_blocks;	// number of blocks in the file system
 	int block_size;			// size of each block in the file system
-	int freespace_loc;		// location of the first block of the freespace
+	int freespace_loc;		// location of the first block of the freespace map
 	int freespace_first;	// reference to the first free block in the drive
 	int freespace_avail;	// number of blocks available in freespace
 	int freespace_size;		// number of blocks that freespace occupies

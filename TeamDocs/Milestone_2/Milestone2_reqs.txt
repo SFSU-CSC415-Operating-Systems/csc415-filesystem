@@ -4,17 +4,34 @@ This will not be turned in.  You should be at the point where you have the file 
 
 This means that the following functions must be implemented and functional:
 
-    fs_setcwd
-    fs_getcwd
-    fs_isFile
-    fs_isDir
-    fs_mkdir
-    fs_opendir
-    fs_readdir
-    fs_closedir
-    fs_stat
+    fs_parsePath    Mark    ParsePath returns a pointer to the directory that the element exists in.
+    fs_setcwd       Peter
+    fs_getcwd       Peter
+    fs_isFile       Zeel
+    fs_isDir        Zeel
+    fs_mkdir        Zeel
+    fs_opendir      Chengkai
+    fs_readdir      Chengkai
+    fs_closedir     Chengkai
+    fs_stat         Mark
 
 And optimally complete
 
-    fs_delete
-    fs_rmdir
+    fs_delete       Mark
+    fs_rmdir        Mark
+
+
+ParsePath:
+Returns a pointer to an array of directory entries (the directory).
+
+Things we need to think about are:
+When shell opens, we will be in the root directory (therefore we know the path).
+When the user changes directory, the USER is putting in the path, so all we need 
+to do is save what the user put in (of course, given that the path is valid).
+This all means we can can just save the entire path and pass it around.
+
+For all functions that we use the path in, let us standardize to the word "pathname"
+
+fs_getcwd(char *pathname) {
+    return pathname;
+}

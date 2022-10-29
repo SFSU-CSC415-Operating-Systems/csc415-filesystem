@@ -18,8 +18,8 @@ int init_free(VCB *fs_vcb, int *freespace)
         fs_vcb->block_size);
     // freespace = malloc(sizeof(int) * fs_vcb->number_of_blocks);
 
-    // Block 0 is the VCB, so the end flag (0xFFFE) is set for this block.
-    freespace[0] = 0xFFFE;
+    // Block 0 is the VCB, so the end flag (0xFFFFFFFE) is set for this block.
+    freespace[0] = 0xFFFFFFFE;
 
     // Initialize all other freespace values to the subsequent block
     for (int i = 1; i < fs_vcb->number_of_blocks; i++)
@@ -28,7 +28,7 @@ int init_free(VCB *fs_vcb, int *freespace)
         }
 
     // Set the last block of the freespace to the end flag.
-    freespace[num_blocks] = 0xFFFE;
+    freespace[num_blocks] = 0xFFFFFFFE;
 
     // Set a reference to point to the first free block of the drive
     fs_vcb->freespace_first = num_blocks + 1;
@@ -40,7 +40,7 @@ int init_free(VCB *fs_vcb, int *freespace)
     fs_vcb->freespace_avail = fs_vcb->number_of_blocks - num_blocks - 1;
 
     // Set last block of the freespace to the end flag
-    freespace[fs_vcb->number_of_blocks - 1] = 0xFFFE;
+    freespace[fs_vcb->number_of_blocks - 1] = 0xFFFFFFFE;
 
     // print_free(fs_vcb, freespace);
     
@@ -56,7 +56,7 @@ int init_free(VCB *fs_vcb, int *freespace)
 
     printf("LBAwrite blocks written: %d\n", blocks_written);
     
-    return 1;
+    return 1;  // 1 is the location for the first block of the freespace map
     }
 
 // alloc_free() allocates the numberOfBlocks, and returns the location of the
@@ -84,7 +84,7 @@ int alloc_free(VCB *fs_vcb, int *freespace, int numberOfBlocks)
     int next = freespace[fs_vcb->freespace_first];
     for (int i = 0; i < fs_vcb->freespace_avail - numberOfBlocks - 1; i++)
         {
-        if (curr == 0xFFFE)
+        if (curr == 0xFFFFFFFE)
             {
             perror("Freespace end flag encountered prematurely\n");
             return -1;
@@ -93,11 +93,10 @@ int alloc_free(VCB *fs_vcb, int *freespace, int numberOfBlocks)
         next = freespace[next];
         }
     printf("Current block to be set to end: %d\n", curr);
-    freespace[curr] = 0xFFFE;
+    freespace[curr] = 0xFFFFFFFE;
     fs_vcb->freespace_avail -= numberOfBlocks;
 
     return next;
-    // return 8000;
     }
 
 int load_free(VCB *fs_vcb, int *freespace)

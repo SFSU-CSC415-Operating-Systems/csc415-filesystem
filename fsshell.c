@@ -32,14 +32,16 @@
 #include <sys/stat.h>
 #include <dirent.h>
 
-//Codes edit from here by Yang
+//Editting from here by Chengkai Yang
 #define fs_mkdir mkdir
 #define fs_getcwd getcwd
 #define fs_setcwd chdir
 #define fs_rmdir rmdir
 #define fs_delete unlink
 
-//fs_opendir open the directory of the file 
+// Directory iteration functions
+// Following the given functions in the mfs.h
+// fs_opendir open the directory of the file 
 fdDir *fs_opendir(const char *name)
 {
 	DIR *dir;
@@ -55,16 +57,17 @@ struct fs_diriteminfo *fs_readdir(fdDir *dirp)
 	dir = (DIR *)dirp;
 	struct dirent *de;
 	de = readdir(dir);
-	if(de == NULL)
-	return (NULL);
-	fsDi.d_reclen = (unsigned short)sizeof(fs);
+	if(de == NULL){
+		return (NULL);
+	}
+	fsDi.d_reclen = (unsigned short)sizeof(fs_opendir);
 	fsDi.fileType = de->d_type;
 	strcpy(fsDi.d_name,de->d_name);
 	return (&fsDi);
 }
 
 //fs_closedir close the directory of the file system
-int fs_closedir(fs_DIR *dirp)
+int fs_closedir(fdDir *dirp)
 {
 	DIR *dir;
 	dir = (DIR*)dirp;

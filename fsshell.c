@@ -31,6 +31,7 @@
 
 #include <sys/stat.h>
 #include <dirent.h>
+
 //Codes edit from here by Yang
 #define fs_mkdir mkdir
 #define fs_getcwd getcwd
@@ -46,6 +47,7 @@ fdDir *fs_opendir(const char *name)
 	return ((fdDir *)dir);
 }
 
+//fs_readdir read the directory of the file
 struct fs_diriteminfo fsDi;
 struct fs_diriteminfo *fs_readdir(fdDir *dirp)
 {
@@ -55,7 +57,7 @@ struct fs_diriteminfo *fs_readdir(fdDir *dirp)
 	de = readdir(dir);
 	if(de == NULL)
 	return (NULL);
-	fsDi.d_reclen = (unsigned short)sizeof(fsDe);
+	fsDi.d_reclen = (unsigned short)sizeof(fs);
 	fsDi.fileType = de->d_type;
 	strcpy(fsDi.d_name,de->d_name);
 	return (&fsDi);

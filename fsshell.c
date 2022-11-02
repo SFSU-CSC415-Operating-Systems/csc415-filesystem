@@ -27,6 +27,47 @@
 
 #include "fsLow.h"
 #include "mfs.h"
+#include "b_io.h"
+
+#include <sys/stat.h>
+#include <dirent.h>
+//Codes edit from here by Yang
+#define fs_mkdir mkdir
+#define fs_getcwd getcwd
+#define fs_setcwd chdir
+#define fs_rmdir rmdir
+#define fs_delete unlink
+
+//fs_opendir open the directory of the file 
+fdDir *fs_opendir(const char *name)
+{
+	DIR *dir;
+	dir = opendir(name);
+	return ((fdDir *)dir);
+}
+
+struct fs_diriteminfo fsDi;
+struct fs_diriteminfo *fs_readdir(fdDir *dirp)
+{
+	DIR *dir;
+	dir = (DIR *)dirp;
+	struct dirent *de;
+	de = readdir(dir);
+	if(de == NULL)
+	return (NULL);
+	fsDi.d_reclen = (unsigned short)sizeof(fsDe);
+	fsDi.fileType = de->d_type;
+	strcpy(fsDi.d_name,de->d_name);
+	return (&fsDi);
+}
+
+//fs_closedir close the directory of the file system
+int fs_closedir(fs_DIR *dirp)
+{
+	DIR *dir;
+	dir = (DIR*)dirp;
+	return(closedir(dir));
+}
 
 #define PERMISSIONS (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)
 

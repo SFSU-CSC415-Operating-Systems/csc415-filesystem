@@ -32,47 +32,47 @@
 #include <sys/stat.h>
 #include <dirent.h>
 
-//Editting from here by Chengkai Yang
-#define fs_mkdir mkdir
-#define fs_getcwd getcwd
-#define fs_setcwd chdir
-#define fs_rmdir rmdir
-#define fs_delete unlink
+// //Editting from here by Chengkai Yang
+// // #define fs_mkdir mkdir
+// // #define fs_getcwd getcwd
+// // #define fs_setcwd chdir
+// // #define fs_rmdir rmdir
+// // #define fs_delete unlink
 
-// Directory iteration functions
-// Following the given functions in the mfs.h
-// fs_opendir open the directory of the file 
-fdDir *fs_opendir(const char *name)
-{
-	DIR *dir;
-	dir = opendir(name);
-	return ((fdDir *)dir);
-}
+// // Directory iteration functions
+// // Following the given functions in the mfs.h
+// // fs_opendir open the directory of the file 
+// fdDir *fs_opendir(const char *name)
+// {
+// 	DIR *dir;
+// 	dir = opendir(name);
+// 	return ((fdDir *)dir);
+// }
 
-//fs_readdir read the directory of the file
-struct fs_diriteminfo fsDi;
-struct fs_diriteminfo *fs_readdir(fdDir *dirp)
-{
-	DIR *dir;
-	dir = (DIR *)dirp;
-	struct dirent *de;
-	de = readdir(dir);
-	if(de == NULL){
-		return (NULL);
-	}
-	fsDi.d_reclen = (unsigned short)sizeof(fs_opendir);
-	fsDi.fileType = de->d_type;
-	strcpy(fsDi.d_name,de->d_name);
-	return (&fsDi);
-}
+// //fs_readdir read the directory of the file
+// struct fs_diriteminfo fsDi;
+// struct fs_diriteminfo *fs_readdir(fdDir *dirp)
+// {
+// 	DIR *dir;
+// 	dir = (DIR *)dirp;
+// 	struct dirent *de;
+// 	de = readdir(dir);
+// 	if(de == NULL){
+// 		return (NULL);
+// 	}
+// 	fsDi.d_reclen = (unsigned short)sizeof(fs_opendir);
+// 	fsDi.fileType = de->d_type;
+// 	strcpy(fsDi.d_name,de->d_name);
+// 	return (&fsDi);
+// }
 
-//fs_closedir close the directory of the file system
-int fs_closedir(fdDir *dirp)
-{
-	DIR *dir;
-	dir = (DIR*)dirp;
-	return(closedir(dir));
-}
+// //fs_closedir close the directory of the file system
+// int fs_closedir(fdDir *dirp)
+// {
+// 	DIR *dir;
+// 	dir = (DIR*)dirp;
+// 	return(closedir(dir));
+// }
 
 #define PERMISSIONS (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)
 

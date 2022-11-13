@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
+#include <dirent.h>
+#include <errno.h>
 #include "fsDir.h"
 #include "fsLow.h"
 #include "mfs.h"
@@ -107,21 +109,18 @@ int init_dir(VCB *fs_vcb, int *freespace, int parent_loc)
                 
         return dir_loc;
         }
-//Editting from here by Chengkai Yang
-#define fs_mkdir mkdir
-#define fs_getcwd getcwd
-#define fs_setcwd chdir
-#define fs_rmdir rmdir
-#define fs_delete unlink
 
-// Directory iteration functions
-// Following the given functions in the mfs.h
-// fs_opendir open the directory of the file 
+//Editting from here by Chengkai Yang
+//fs_opendir open the directory of the file 
 fdDir *fs_opendir(const char *name)
 {
-	DIR *dir;
-	dir = opendir(name);
-	return ((fdDir *)dir);
+        //Exception for name equals to NULL
+        if(name == NULL)
+        return NULL;
+
+        DIR *dir;
+        dir = opendir(name);
+        return ((fdDir*)dir);
 }
 
 //fs_readdir read the directory of the file
@@ -144,8 +143,8 @@ struct fs_diriteminfo *fs_readdir(fdDir *dirp)
 //fs_closedir close the directory of the file system
 int fs_closedir(fdDir *dirp)
 {
-	DIR *dir;
-	dir = (DIR*)dirp;
+        DIR *dir;
+        //prinf("The directory has already closed\n");
 	return(closedir(dir));
 }
 

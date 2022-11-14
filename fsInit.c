@@ -26,12 +26,16 @@
 #include "fsFree.h"
 #include "fsDir.h"
 
+// Declare global variables defined in mfs.h.  These are accessible everwhere.
 VCB *fs_vcb;
 int *freespace;
+char *cw_path;
+DE *cw_dir_array;
 
 int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 	{
-	printf ("Initializing File System with %ld blocks with a block size of %ld\n", numberOfBlocks, blockSize);
+	printf ("Initializing File System with %ld blocks with a block size of %ld\n", 
+		numberOfBlocks, blockSize);
 	/* TODO: Add any code you need to initialize your file system. */
 
 	// malloc space for the VCB that will take up an entire block
@@ -73,7 +77,7 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 		// init_free initializes freespace_first and freespace_avail of the VCB
 		fs_vcb->freespace_loc = init_free(fs_vcb, freespace);
 		// print_free(fs_vcb, freespace);
-		fs_vcb->root_loc = init_dir(fs_vcb, freespace, 0);
+		fs_vcb->root_loc = init_dir(0);
 
 		if (LBAwrite(fs_vcb, 1, 0) != 1)
 			{

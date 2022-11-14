@@ -8,21 +8,21 @@
 #include "fsFree.h"
 #include "fsHelpers.h"
 
-#define DE_COUNT 40		// initial number of d_entries to allocate to a directory
+#define DE_COUNT 64		// initial number of d_entries to allocate to a directory
 
 // Initialize a directory
 // If parent_loc == 0, this is the root directory
-int init_dir(VCB *fs_vcb, int *freespace, int parent_loc)
+int init_dir(int parent_loc)
         {
         printf("***** init_dir *****\n");
 
         int num_blocks = get_num_blocks(sizeof(DE) * DE_COUNT, fs_vcb->block_size);
-        printf("Number of blocks for the root dir: %d\n", num_blocks);
+        printf("Number of blocks in dir: %d\n", num_blocks);
         int num_bytes = num_blocks * fs_vcb->block_size;
-        printf("Number of bytes for the root dir: %d\n", num_bytes);
+        printf("Number of bytes in dir: %d\n", num_bytes);
         printf("Size of DE: %lu\n", sizeof(DE));
-        DE* dir_array = malloc(num_bytes);
-        int dir_loc = alloc_free(fs_vcb, freespace, num_blocks);
+        DE* dir_array = alloc_dir_array();
+        int dir_loc = alloc_free(num_blocks);
         printf("Directory Location: %d\n", dir_loc);
 
         if (dir_loc == -1)
@@ -33,16 +33,8 @@ int init_dir(VCB *fs_vcb, int *freespace, int parent_loc)
                 return -1;
                 }
 
-        // typedef struct
-        //     {
-        //     int size;		// size of the file in bytes
-        //     int loc;			// block location of file
-        //     time_t created;		// time file was created
-        //     time_t modified;	        // time file was last modified
-        //     time_t accessed;	        // time file was last accessed
-        //     char attr;		// attributes of file ('d': directory, 'f': file)
-        //     char name[43];		// name of file
-        //     } DE;
+        // track number of blocks root directory occupies
+        fs_vcb->root_blocks = num_blocks;
 
         // Directory "." entry initialization
         dir_array[0].size = num_bytes;
@@ -66,8 +58,8 @@ int init_dir(VCB *fs_vcb, int *freespace, int parent_loc)
                 }
         else
                 {
-                // How do I pull directory info from the parent?
-                // Would this even be necessary?
+                // Need to LBAread the parent to get all the data about the parent
+                // Is this even necessary?
                 dir_array[1].size = num_bytes;
                 dir_array[1].loc = parent_loc;     // currently the only difference
                 dir_array[1].created = curr_time;
@@ -108,6 +100,50 @@ int init_dir(VCB *fs_vcb, int *freespace, int parent_loc)
         return dir_loc;
         }
 
+DE* parsePath(char *pathname)
+        {
+        printf("***** parsePath *****\n");
+
+        DE* dir_array = alloc_dir_array();
+
+        if (pathname[0] == '/')
+                {
+                LBAread(dir_array, fs_vcb->root_blocks, fs_vcb->root_loc);
+                }
+        
+        // malloc plenty of space for token array
+        char **tok_array = malloc(strlen(pathname) * sizeof(char*));
+        char *lasts;
+        char *tok = strtok_r(pathname, "/", &lasts);
+        tok_array[0] = tok;
+        int tok_count = 1;
+
+        while (tok != NULL)
+                {
+                tok = strtok_r(NULL, "/", &lasts);
+                tok_array[tok_count++] = tok;
+                }
+
+        for (int i = 0; i < tok_count - 1; i++)
+                {
+                for (int j = 0; j < )
+                }
+
+        return dir_array;
+        }
+
+DE* alloc_dir_array()
+        {
+        printf("******** alloc_dir_array **********");
+        int num_blocks = get_num_blocks(sizeof(DE) * DE_COUNT, fs_vcb->block_size);
+        printf("Number of blocks in dir: %d\n", num_blocks);
+        int num_bytes = num_blocks * fs_vcb->block_size;
+        printf("Number of bytes in dir: %d\n", num_bytes);
+        printf("Size of DE: %lu\n", sizeof(DE));
+        DE* dir_array = malloc(num_bytes);
+        return dir_array;
+        }
+
 void print_dir(DE* dir_array)
         {
         printf("=================== Printing Directory Map ===================\n");
@@ -118,7 +154,7 @@ void print_dir(DE* dir_array)
                 }
         }
 
-void print_de(DE *dir)
+void print_de(DE* dir)
         {
         printf("=================== Printing Directory Entry ===================\n");
         printf("Size: %d\nLocation: %d\nCreated: %ld\nModified: %ld\nAccessed: %ld\nAttribute: %s\nName: %s\n",

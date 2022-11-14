@@ -49,9 +49,9 @@ struct fs_diriteminfo
 typedef struct
 	{
 	/*****TO DO:  Fill in this structure with what your open/read directory needs  *****/
-	unsigned short  d_reclen;		/*length of this record */
-	unsigned short	dirEntryPosition;	/*which directory entry position, like file pos */
-	uint64_t	directoryStartLocation;		/*Starting LBA of directory */
+	unsigned short  d_reclen;		/*length of this record getNumBlocks() from line 19 fsDir.c*/
+	unsigned short	dirEntryPosition;	/*which directory entry position, like file pos (index of dir from directory array)*/
+	uint64_t	directoryStartLocation;		/*Starting LBA of directory (DE loc) */
 	} fdDir;
 
 // This is the directory entry structure for the file system
@@ -77,8 +77,14 @@ typedef struct
 	int freespace_avail;	// number of blocks available in freespace
 	int freespace_size;		// number of blocks that freespace occupies
 	int root_loc;			// block location of root
+	int root_blocks;		// number of blocks the root directory occupies
 	long magic;				// unique volume identifier
 	} VCB;
+
+extern VCB *fs_vcb;
+extern int *freespace;
+extern char *cw_path;
+extern DE *cw_dir_array;
 
 // Key directory functions
 int fs_mkdir(const char *pathname, mode_t mode);

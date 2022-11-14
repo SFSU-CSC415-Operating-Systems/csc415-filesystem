@@ -8,7 +8,7 @@
 
 // Initialize the freespace as specified in the file system volume
 // control block.
-int init_free(VCB *fs_vcb, int *freespace)
+int init_free()
     {
     printf("***** init_free *****\n");
     
@@ -62,7 +62,7 @@ int init_free(VCB *fs_vcb, int *freespace)
 // alloc_free() allocates the numberOfBlocks, and returns the location of the
 // first block of the allocation.  This function also sets the reference to the
 // first block of the remaining free space to
-int alloc_free(VCB *fs_vcb, int *freespace, int numberOfBlocks)
+int alloc_free(int numberOfBlocks)
     {
     printf("***** alloc_free *****\n");
 
@@ -99,7 +99,14 @@ int alloc_free(VCB *fs_vcb, int *freespace, int numberOfBlocks)
     return next;
     }
 
-int load_free(VCB *fs_vcb, int *freespace)
+// make_free_avail()
+// make a new function to make freespace available
+// set this block index in the freespace map 
+// to first block in file/dir being deleted:
+//   freespace[(fs_vcb->freespace_first + (fs_vcb->freespace_avail - 1))]
+// increase fs_vcb->freespace_avail by the file/dir block size
+
+int load_free()
     {
     printf("***** load_free *****\n");
     freespace = malloc(sizeof(int) * fs_vcb->number_of_blocks);
@@ -114,7 +121,7 @@ int load_free(VCB *fs_vcb, int *freespace)
     return blocks_read;
     }
 
-void print_free(VCB *fs_vcb, int *freespace)
+void print_free()
     {
     printf("=================== Printing Freespace Map ===================\n");
     printf("Location of start of freespace: %d\n", fs_vcb->freespace_loc);

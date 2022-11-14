@@ -108,6 +108,29 @@ int init_dir(VCB *fs_vcb, int *freespace, int parent_loc)
         return dir_loc;
         }
 
+DE* parsePath(VCB *fs_vcb, char *pathname, DE *cw_dir)
+        {
+        if (pathname[0] == '/')
+                {
+                LBAread(cw_dir, fs_vcb->root_blocks, fs_vcb->root_loc);
+                }
+        
+        // malloc plenty of space for token array
+        char **tok_array = malloc(strlen(pathname) * sizeof(char*));
+        char *lasts;
+        char *tok = strtok_r(pathname, "/", &lasts);
+        tok_array[0] = tok;
+        int tok_count = 0;
+
+        while (tok != NULL)
+                {
+                tok = strtok_r(NULL, "/", &lasts);
+                tok_array[++tok_count] = tok;
+                }
+
+        return cw_dir;
+        }
+
 void print_dir(DE* dir_array)
         {
         printf("=================== Printing Directory Map ===================\n");

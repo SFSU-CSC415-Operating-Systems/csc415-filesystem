@@ -49,9 +49,9 @@ struct fs_diriteminfo
 typedef struct
 	{
 	/*****TO DO:  Fill in this structure with what your open/read directory needs  *****/
-	unsigned short  d_reclen;		/*length of this record */
-	unsigned short	dirEntryPosition;	/*which directory entry position, like file pos */
-	uint64_t	directoryStartLocation;		/*Starting LBA of directory */
+	unsigned short  d_reclen;		/*length of this record getNumBlocks() from line 19 fsDir.c*/
+	unsigned short	dirEntryPosition;	/*which directory entry position, like file pos (index of dir from directory array)*/
+	uint64_t	directoryStartLocation;		/*Starting LBA of directory (DE loc) */
 	} fdDir;
 
 // This is the directory entry structure for the file system

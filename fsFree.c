@@ -99,6 +99,13 @@ int alloc_free(VCB *fs_vcb, int *freespace, int numberOfBlocks)
     return next;
     }
 
+// make_free_avail()
+// make a new function to make freespace available
+// set this block index in the freespace map 
+// to first block in file/dir being deleted:
+//   freespace[(fs_vcb->freespace_first + (fs_vcb->freespace_avail - 1))]
+// increase fs_vcb->freespace_avail by the file/dir block size
+
 int load_free(VCB *fs_vcb, int *freespace)
     {
     printf("***** load_free *****\n");

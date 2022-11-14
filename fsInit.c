@@ -28,6 +28,7 @@
 
 VCB *fs_vcb;
 int *freespace;
+char *cw_dir;
 
 int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 	{

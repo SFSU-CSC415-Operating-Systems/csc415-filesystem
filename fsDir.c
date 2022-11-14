@@ -17,9 +17,9 @@ int init_dir(VCB *fs_vcb, int *freespace, int parent_loc)
         printf("***** init_dir *****\n");
 
         int num_blocks = get_num_blocks(sizeof(DE) * DE_COUNT, fs_vcb->block_size);
-        printf("Number of blocks for the root dir: %d\n", num_blocks);
+        printf("Number of blocks in dir: %d\n", num_blocks);
         int num_bytes = num_blocks * fs_vcb->block_size;
-        printf("Number of bytes for the root dir: %d\n", num_bytes);
+        printf("Number of bytes in dir: %d\n", num_bytes);
         printf("Size of DE: %lu\n", sizeof(DE));
         DE* dir_array = malloc(num_bytes);
         int dir_loc = alloc_free(fs_vcb, freespace, num_blocks);
@@ -111,11 +111,15 @@ int init_dir(VCB *fs_vcb, int *freespace, int parent_loc)
         return dir_loc;
         }
 
-DE* parsePath(VCB *fs_vcb, char *pathname, DE *cw_dir)
+DE* parsePath(VCB *fs_vcb, char *pathname, char *cw_dir)
         {
+        printf("***** parsePath *****\n");
+
+        
+
         if (pathname[0] == '/')
                 {
-                LBAread(cw_dir, fs_vcb->root_blocks, fs_vcb->root_loc);
+                LBAread(dir_array, fs_vcb->root_blocks, fs_vcb->root_loc);
                 }
         
         // malloc plenty of space for token array
@@ -123,15 +127,32 @@ DE* parsePath(VCB *fs_vcb, char *pathname, DE *cw_dir)
         char *lasts;
         char *tok = strtok_r(pathname, "/", &lasts);
         tok_array[0] = tok;
-        int tok_count = 0;
+        int tok_count = 1;
 
         while (tok != NULL)
                 {
                 tok = strtok_r(NULL, "/", &lasts);
-                tok_array[++tok_count] = tok;
+                tok_array[tok_count++] = tok;
+                }
+
+        for (int i = 0; i < tok_count - 1; i++)
+                {
+                
                 }
 
         return cw_dir;
+        }
+
+DE* alloc_dir_array(VCB* fs_vcb)
+        {
+        printf("")
+        int num_blocks = get_num_blocks(sizeof(DE) * DE_COUNT, fs_vcb->block_size);
+        printf("Number of blocks in dir: %d\n", num_blocks);
+        int num_bytes = num_blocks * fs_vcb->block_size;
+        printf("Number of bytes in dir: %d\n", num_bytes);
+        printf("Size of DE: %lu\n", sizeof(DE));
+        DE* dir_array = malloc(num_bytes);
+        return dir_array;
         }
 
 void print_dir(DE* dir_array)

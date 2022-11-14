@@ -74,7 +74,7 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 		// init_free initializes freespace_first and freespace_avail of the VCB
 		fs_vcb->freespace_loc = init_free(fs_vcb, freespace);
 		// print_free(fs_vcb, freespace);
-		fs_vcb->root_loc = init_dir(fs_vcb, freespace, 0);
+		fs_vcb->root_loc = init_dir(0);
 
 		if (LBAwrite(fs_vcb, 1, 0) != 1)
 			{

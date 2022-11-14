@@ -12,7 +12,7 @@
 
 // Initialize a directory
 // If parent_loc == 0, this is the root directory
-int init_dir(VCB *fs_vcb, int *freespace, int parent_loc)
+int init_dir(int parent_loc)
         {
         printf("***** init_dir *****\n");
 
@@ -22,7 +22,7 @@ int init_dir(VCB *fs_vcb, int *freespace, int parent_loc)
         printf("Number of bytes in dir: %d\n", num_bytes);
         printf("Size of DE: %lu\n", sizeof(DE));
         DE* dir_array = malloc(num_bytes);
-        int dir_loc = alloc_free(fs_vcb, freespace, num_blocks);
+        int dir_loc = alloc_free(num_blocks);
         printf("Directory Location: %d\n", dir_loc);
 
         if (dir_loc == -1)
@@ -111,11 +111,11 @@ int init_dir(VCB *fs_vcb, int *freespace, int parent_loc)
         return dir_loc;
         }
 
-DE* parsePath(VCB *fs_vcb, char *pathname, char *cw_dir)
+DE* parsePath(char *pathname)
         {
         printf("***** parsePath *****\n");
 
-        DE* dir_array = alloc_dir_array(fs_vcb);
+        DE* dir_array = alloc_dir_array();
 
         if (pathname[0] == '/')
                 {
@@ -143,7 +143,7 @@ DE* parsePath(VCB *fs_vcb, char *pathname, char *cw_dir)
         return dir_array;
         }
 
-DE* alloc_dir_array(VCB* fs_vcb)
+DE* alloc_dir_array()
         {
         printf("******** alloc_dir_array **********");
         int num_blocks = get_num_blocks(sizeof(DE) * DE_COUNT, fs_vcb->block_size);
@@ -165,7 +165,7 @@ void print_dir(DE* dir_array)
                 }
         }
 
-void print_de(DE *dir)
+void print_de(DE* dir)
         {
         printf("=================== Printing Directory Entry ===================\n");
         printf("Size: %d\nLocation: %d\nCreated: %ld\nModified: %ld\nAccessed: %ld\nAttribute: %s\nName: %s\n",

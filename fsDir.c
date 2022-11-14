@@ -115,7 +115,7 @@ DE* parsePath(VCB *fs_vcb, char *pathname, char *cw_dir)
         {
         printf("***** parsePath *****\n");
 
-        
+        DE* dir_array = alloc_dir_array(fs_vcb);
 
         if (pathname[0] == '/')
                 {
@@ -140,12 +140,12 @@ DE* parsePath(VCB *fs_vcb, char *pathname, char *cw_dir)
                 
                 }
 
-        return cw_dir;
+        return dir_array;
         }
 
 DE* alloc_dir_array(VCB* fs_vcb)
         {
-        printf("")
+        printf("******** alloc_dir_array **********");
         int num_blocks = get_num_blocks(sizeof(DE) * DE_COUNT, fs_vcb->block_size);
         printf("Number of blocks in dir: %d\n", num_blocks);
         int num_bytes = num_blocks * fs_vcb->block_size;

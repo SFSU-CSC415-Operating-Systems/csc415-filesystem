@@ -83,7 +83,8 @@ typedef struct
 
 extern VCB *fs_vcb;
 extern int *freespace;
-extern char *cw_dir;
+extern char *cw_path;
+extern DE *cw_dir_array;
 
 // Key directory functions
 int fs_mkdir(const char *pathname, mode_t mode);

@@ -8,7 +8,7 @@
 #include "fsFree.h"
 #include "fsHelpers.h"
 
-#define DE_COUNT 40		// initial number of d_entries to allocate to a directory
+#define DE_COUNT 64		// initial number of d_entries to allocate to a directory
 
 // Initialize a directory
 // If parent_loc == 0, this is the root directory
@@ -43,6 +43,9 @@ int init_dir(VCB *fs_vcb, int *freespace, int parent_loc)
         //     char attr;		// attributes of file ('d': directory, 'f': file)
         //     char name[43];		// name of file
         //     } DE;
+
+        // track number of blocks root directory occupies
+        fs_vcb->root_blocks = num_blocks;
 
         // Directory "." entry initialization
         dir_array[0].size = num_bytes;

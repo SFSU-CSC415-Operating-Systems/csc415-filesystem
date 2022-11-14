@@ -77,6 +77,7 @@ typedef struct
 	int freespace_avail;	// number of blocks available in freespace
 	int freespace_size;		// number of blocks that freespace occupies
 	int root_loc;			// block location of root
+	int root_blocks;		// number of blocks the root directory occupies
 	long magic;				// unique volume identifier
 	} VCB;
 

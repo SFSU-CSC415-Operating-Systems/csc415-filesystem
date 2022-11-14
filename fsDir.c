@@ -21,7 +21,7 @@ int init_dir(int parent_loc)
         int num_bytes = num_blocks * fs_vcb->block_size;
         printf("Number of bytes in dir: %d\n", num_bytes);
         printf("Size of DE: %lu\n", sizeof(DE));
-        DE* dir_array = malloc(num_bytes);
+        DE* dir_array = alloc_dir_array();
         int dir_loc = alloc_free(num_blocks);
         printf("Directory Location: %d\n", dir_loc);
 
@@ -32,17 +32,6 @@ int init_dir(int parent_loc)
                 dir_array = NULL;
                 return -1;
                 }
-
-        // typedef struct
-        //     {
-        //     int size;		// size of the file in bytes
-        //     int loc;			// block location of file
-        //     time_t created;		// time file was created
-        //     time_t modified;	        // time file was last modified
-        //     time_t accessed;	        // time file was last accessed
-        //     char attr;		// attributes of file ('d': directory, 'f': file)
-        //     char name[43];		// name of file
-        //     } DE;
 
         // track number of blocks root directory occupies
         fs_vcb->root_blocks = num_blocks;
@@ -69,8 +58,8 @@ int init_dir(int parent_loc)
                 }
         else
                 {
-                // How do I pull directory info from the parent?
-                // Would this even be necessary?
+                // Need to LBAread the parent to get all the data about the parent
+                // Is this even necessary?
                 dir_array[1].size = num_bytes;
                 dir_array[1].loc = parent_loc;     // currently the only difference
                 dir_array[1].created = curr_time;
@@ -137,7 +126,7 @@ DE* parsePath(char *pathname)
 
         for (int i = 0; i < tok_count - 1; i++)
                 {
-                
+                for (int j = 0; j < )
                 }
 
         return dir_array;

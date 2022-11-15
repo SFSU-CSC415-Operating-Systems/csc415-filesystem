@@ -166,11 +166,54 @@ int fs_mkdir(const char *pathname, mode_t mode)
 int fs_stat(const char *path, struct fs_stat *buf)
   {
   DE *dir_array = parsePath(path);
+  char last_tok = get_last_tok(path);
   if (dir_array == NULL)
     {
+    printf("Invalid path: %s", path);
     return -1;
     }
-  return 0;
+
+  int index_found = -1;
+  for (int i = 2; i < DE_COUNT; i++)
+    {
+    if (strcmp(last_tok, dir_array[i].name) == 0)
+      index_found = i;
+      break;
+    }
+  
+  if (index_found == -1)
+    {
+    perror("File/directory not found");
+    return -1;
+    }
+  
+  buf->st_size = dir_array[index_found].size;
+  buf->st_blksize = fs_vcb->block_size;
+  buf->st_blocks = dir_array[index_found].num_blocks;
+  buf->st_accesstime = dir_array[index_found].accessed;
+  buf->st_modtime = dir_array[index_found].modified;
+  buf->st_createtime = dir_array[index_found].created;
+
+  free(dir_array);
+  dir_array = NULL;
+
+  return index_found;
+  }
+
+char get_last_tok(char *path)
+  {
+  char last_tok[512];
+  char *lasts;
+  char *tok = strtok_r(path, "/", &lasts);
+
+  while (tok != NULL)
+    {
+    tok = strtok_r(NULL, "/", &lasts);
+    }
+  
+  strcpy(last_tok, tok);
+
+  return last_tok;
   }
 
 void print_dir(DE* dir_array)

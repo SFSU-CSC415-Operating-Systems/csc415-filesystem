@@ -22,13 +22,22 @@ int init_free()
   freespace[0] = 0xFFFFFFFE;
 
   // Initialize all other freespace values to the subsequent block
-  for (int i = 1; i < fs_vcb->number_of_blocks; i++)
+  for (int i = 1; i < (fs_vcb->number_of_blocks); i++)
     {
     freespace[i] = i + 1;
     }
 
   // Set the last block of the freespace to the end flag.
   freespace[num_blocks] = 0xFFFFFFFE;
+
+  // // zero out the rest of the free space
+  // int free_left = (num_blocks * fs_vcb->block_size - fs_vcb->number_of_blocks * sizeof(int))/sizeof(int);
+  // for (int i = num_blocks + 1; i < free_left; i++)
+  //   {
+  //   freespace[i] = 0;
+  //   }
+
+  // print_free();
 
   // Set a reference to point to the first free block of the drive
   fs_vcb->freespace_first = num_blocks + 1;
@@ -127,15 +136,32 @@ void print_free()
   printf("Size of freespace in blocks:    %d\n", fs_vcb->freespace_size);
   printf("Number of available blocks:     %d\n", fs_vcb->freespace_avail);
   printf("First free block location:      %d\n", fs_vcb->freespace_first);
-  printf("Size of int:                    %lu\n", sizeof(int));
-  for (int i = 0; i < 160; i++)
+  printf("Size of int:                    %lu\n\n", sizeof(int));
+  printf("================== First Entry of Each Block ==================\n");
+  for (int i = 0; i < fs_vcb->freespace_size*fs_vcb->block_size/sizeof(int); i++)
     {
-    printf("%#010x  ", freespace[i]);
-    if ((i + 1) % 16 == 0)
+    if (i % (sizeof(int) * 32) == 0)
+      {
+      printf("%#010x  ", freespace[i]);
+      }
+    if ((i + 1) % (sizeof(int) * 32 * 8) == 0)
       {
       printf("\n");
       }
+    if (i > fs_vcb->number_of_blocks)
+      {
+      if (i - 1 == fs_vcb->number_of_blocks)
+        {
+        printf("\n");
+        }
+      printf("%#010x  ", freespace[i]);
+      if ((i + 1) * 8 == 0)
+        {
+        printf("\n");
+        }
+      }
     }
+  printf("\n");
   }
 
 /*

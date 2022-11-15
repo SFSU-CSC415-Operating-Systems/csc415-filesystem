@@ -41,7 +41,8 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 
 	// malloc freespace by the number of blocks requested multiplied by the size
 	// of an integer.
-	freespace = malloc(sizeof(int) * numberOfBlocks);
+	freespace = malloc(get_num_blocks(sizeof(int) * numberOfBlocks,
+    blockSize)*blockSize);
 
 	// read in the volume control block from the first block of file system
 	LBAread(fs_vcb, 1, 0);
@@ -92,6 +93,8 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 			return EXIT_FAILURE;
 			}		
 		}
+
+	print_free();
 		
 	return 0;
 	}

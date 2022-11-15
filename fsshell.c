@@ -759,7 +759,6 @@ int main (int argc, char * argv[])
 	
 	while (1)
 		{
-		// printf("Before cmdin\n");
 		cmdin = readline("Prompt > ");
 #ifdef COMMAND_DEBUG
 		printf ("%s\n", cmdin);

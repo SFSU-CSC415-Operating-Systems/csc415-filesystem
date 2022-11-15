@@ -4,6 +4,7 @@
 #include <time.h>
 #include <dirent.h>
 #include <errno.h>
+#include <sys/types.h>
 #include "fsDir.h"
 #include "fsLow.h"
 #include "mfs.h"
@@ -111,15 +112,16 @@ int init_dir(VCB *fs_vcb, int *freespace, int parent_loc)
         }
 
 //Editting from here by Chengkai Yang
-//fs_opendir open the directory of the file 
-fdDir *fs_opendir(const char *name)
+//fs_opendir open the directory of the file
+// .a/b/c/d
+// ..a/b/c/d
+fdDir * fs_opendir(const char *pathname);
 {
-        //Exception for name equals to NULL
-        if(name == NULL)
+        if(pathname == NULL)
         return NULL;
 
         DIR *dir;
-        dir = opendir(name);
+        dir = opendir(pathname);
         return ((fdDir*)dir);
 }
 
@@ -145,7 +147,16 @@ int fs_closedir(fdDir *dirp)
 {
         DIR *dir;
         //prinf("The directory has already closed\n");
-	return(closedir(dir));
+        struct dirent *entry;
+        int count;
+
+        if ((dir = opendir(".")) == NULL){
+        perror("opendir() error");
+        }
+        while ((dp = fs_readdir(dir)) !=NULL){
+
+        }
+	closedir(dir);
 }
 
 void print_dir(DE* dir_array)

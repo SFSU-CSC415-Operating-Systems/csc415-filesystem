@@ -27,52 +27,6 @@
 
 #include "fsLow.h"
 #include "mfs.h"
-#include "b_io.h"
-
-#include <sys/stat.h>
-#include <dirent.h>
-
-// //Editting from here by Chengkai Yang
-// // #define fs_mkdir mkdir
-// // #define fs_getcwd getcwd
-// // #define fs_setcwd chdir
-// // #define fs_rmdir rmdir
-// // #define fs_delete unlink
-
-// // Directory iteration functions
-// // Following the given functions in the mfs.h
-// // fs_opendir open the directory of the file 
-// fdDir *fs_opendir(const char *name)
-// {
-// 	DIR *dir;
-// 	dir = opendir(name);
-// 	return ((fdDir *)dir);
-// }
-
-// //fs_readdir read the directory of the file
-// struct fs_diriteminfo fsDi;
-// struct fs_diriteminfo *fs_readdir(fdDir *dirp)
-// {
-// 	DIR *dir;
-// 	dir = (DIR *)dirp;
-// 	struct dirent *de;
-// 	de = readdir(dir);
-// 	if(de == NULL){
-// 		return (NULL);
-// 	}
-// 	fsDi.d_reclen = (unsigned short)sizeof(fs_opendir);
-// 	fsDi.fileType = de->d_type;
-// 	strcpy(fsDi.d_name,de->d_name);
-// 	return (&fsDi);
-// }
-
-// //fs_closedir close the directory of the file system
-// int fs_closedir(fdDir *dirp)
-// {
-// 	DIR *dir;
-// 	dir = (DIR*)dirp;
-// 	return(closedir(dir));
-// }
 
 #define PERMISSIONS (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)
 
@@ -93,6 +47,7 @@
 #define CMDPWD_ON	0
 #define CMDTOUCH_ON	0
 #define CMDCAT_ON	0
+#define CMDPP_ON 1
 
 
 typedef struct dispatch_t
@@ -116,6 +71,8 @@ int cmd_cd (int argcnt, char *argvec[]);
 int cmd_pwd (int argcnt, char *argvec[]);
 int cmd_history (int argcnt, char *argvec[]);
 int cmd_help (int argcnt, char *argvec[]);
+int cmd_pp (int argcnt, char *argvec[]);
+int cmd_nums (int argcnt, char *argvec[]);
 
 dispatch_t dispatchTable[] = {
 	{"ls", cmd_ls, "Lists the file in a directory"},
@@ -123,14 +80,16 @@ dispatch_t dispatchTable[] = {
 	{"mv", cmd_mv, "Moves a file - source dest"},
 	{"md", cmd_md, "Make a new directory"},
 	{"rm", cmd_rm, "Removes a file or directory"},
-        {"touch",cmd_touch, "Touches/Creates a file"},
-        {"cat", cmd_cat, "Limited version of cat that displace the file to the console"},
+  {"touch",cmd_touch, "Touches/Creates a file"},
+  {"cat", cmd_cat, "Limited version of cat that displace the file to the console"},
 	{"cp2l", cmd_cp2l, "Copies a file from the test file system to the linux file system"},
 	{"cp2fs", cmd_cp2fs, "Copies a file from the Linux file system to the test file system"},
 	{"cd", cmd_cd, "Changes directory"},
 	{"pwd", cmd_pwd, "Prints the working directory"},
 	{"history", cmd_history, "Prints out the history"},
-	{"help", cmd_help, "Prints out help"}
+	{"help", cmd_help, "Prints out help"},
+	{"pp", cmd_pp, "Test parsePath"},
+	{"nums", cmd_nums, "Test number sizes"}
 };
 
 static int dispatchcount = sizeof (dispatchTable) / sizeof (dispatch_t);
@@ -780,7 +739,7 @@ int main (int argc, char * argv[])
 		printf ("Start Partition Failed:  %d\n", retVal);
 		return (retVal);
 		}
-		
+	
 	retVal = initFileSystem (volumeSize / blockSize, blockSize);
 	
 	if (retVal != 0)
@@ -793,7 +752,6 @@ int main (int argc, char * argv[])
 	if (argc > 4)
 		if(strcmp("lowtest", argv[4]) == 0)
 			runFSLowTest();
-
 
 	using_history();
 	stifle_history(200);	//max history entries
@@ -833,4 +791,64 @@ int main (int argc, char * argv[])
 		free (cmd);
 		cmd = NULL;		
 		} // end while
+	}
+
+
+/****************************************************
+*  PP commmand (for testing parsePath)
+****************************************************/
+int cmd_pp (int argcnt, char *argvec[])
+	{
+#if (CMDPP_ON == 1)	
+	if (argcnt != 2)
+		{
+		printf ("Usage: pp path\n");
+		return (-1);
+		}
+	char * path = argvec[1];	//argument
+	
+	if (path[0] == '"')
+		{
+		if (path[strlen(path)-1] == '"')
+			{
+			//remove quotes from string
+			path = path + 1;
+			path[strlen(path) - 1] = 0;
+			}
+		}
+	DE* ret = parsePath (path);
+	if (ret == NULL)	//error
+		{
+		printf ("Could not find path: %s\n", path);
+		return -1;
+		}			
+#endif
+	print_dir(ret);
+	return 0;
+	}
+
+/****************************************************
+*  nums commmand (for testing number sizes)
+****************************************************/
+int cmd_nums (int argcnt, char *argvec[])
+	{
+	if (argcnt != 1)
+		{
+		printf ("Usage: nums\n");
+		return (-1);
+		}
+
+	printf("Data Type       Size in Bytes\n");
+	printf("time_t:         %lu\n", sizeof(time_t));
+	printf("unsigned int:   %lu\n", sizeof(unsigned int));
+	printf("unsigned long:  %lu\n", sizeof(unsigned long));
+	printf("long:           %lu\n", sizeof(long));
+	printf("unsigned short: %lu\n", sizeof(unsigned short));
+	printf("uint32_t:       %lu\n", sizeof(uint32_t));
+	printf("uint64_t:       %lu\n", sizeof(uint64_t));
+	printf("char:           %lu\n", sizeof(char));
+	printf("char[83]:       %lu\n", sizeof(char[83]));
+	printf("DE:             %lu\n", sizeof(DE));
+
+	return 0;
 	}

@@ -57,6 +57,9 @@ dkms.conf
 !hexdump.txt
 !Milestone*reqs.txt
 
+# Shell
+fsshell
+
 # Created volume
 SampleVolume
 

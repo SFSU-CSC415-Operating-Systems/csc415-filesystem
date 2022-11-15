@@ -28,6 +28,8 @@
 
 VCB *fs_vcb;
 int *freespace;
+char *cw_path;
+DE *cw_dir_array;
 
 int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 	{
@@ -37,17 +39,31 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 	// malloc space for the VCB that will take up an entire block
 	fs_vcb = malloc(blockSize);
 
+	// malloc freespace by the number of blocks requested multiplied by the size
+	// of an integer.
+	freespace = malloc(get_num_blocks(sizeof(int) * numberOfBlocks,
+    blockSize)*blockSize);
+
 	// read in the volume control block from the first block of file system
 	LBAread(fs_vcb, 1, 0);
 
 	// check if the volume control block is the one we are looking for
 	if (fs_vcb->magic == 678267415)
 		{
-		if (load_free(fs_vcb, freespace) != fs_vcb->freespace_size)
+		if (load_free() != fs_vcb->freespace_size)
 			{
 			perror("Freespace load failed\n");
 			return -1;
 			};
+
+		// // read the root directory into tracking DE array.
+		// LBAread(cw_dir_array, fs_vcb->root_blocks, fs_vcb->root_loc);
+
+		// // malloc then set the path to root.
+		// cw_path = malloc(PATH_LENGTH);
+		// strcpy(cw_path, "/");
+		// printf("After after load_free()\n");
+
 		}
 	else
 		{
@@ -66,14 +82,10 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 		fs_vcb->number_of_blocks = numberOfBlocks;
 		fs_vcb->block_size = blockSize;
 
-		// Calculate the number of blocks needed for the freespace as specified
-		// in the vcb.  Then allocate the freespace in memory.
-		freespace = malloc(sizeof(int) * fs_vcb->number_of_blocks);
-
 		// init_free initializes freespace_first and freespace_avail of the VCB
-		fs_vcb->freespace_loc = init_free(fs_vcb, freespace);
+		fs_vcb->freespace_loc = init_free();
 		// print_free(fs_vcb, freespace);
-		fs_vcb->root_loc = init_dir(fs_vcb, freespace, 0);
+		fs_vcb->root_loc = init_dir(0);
 
 		if (LBAwrite(fs_vcb, 1, 0) != 1)
 			{
@@ -82,10 +94,12 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 			}		
 		}
 
+	print_free();
+		
 	return 0;
 	}
-	
-	
+
+
 void exitFileSystem ()
 	{
 	printf ("System exiting\n");

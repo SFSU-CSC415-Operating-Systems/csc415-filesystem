@@ -142,7 +142,7 @@ DE* parsePath(char *pathname)
     int found = 0;
     for (int j = 0; j < DE_COUNT; j++)
       {
-      if (strcmp(tok_array[i], dir_array[j].name) == 0)
+      if (strcmp(tok_array[i], dir_array[j].name) == 0 && strcmp(dir_array[j].attr, "d"))
         {
         found = 1;
         LBAread(dir_array, num_blocks, dir_array[j].loc);

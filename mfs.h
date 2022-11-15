@@ -58,18 +58,18 @@ typedef struct
 	} fdDir;
 
 // This is the directory entry structure for the file system
-// This struct is exactly 63 bytes in size
+// This struct is exactly 128 bytes in size
 typedef struct
 	{
 	time_t created;						// time file was created
 	time_t modified;					// time file was last modified
 	time_t accessed;					// time file was last accessed
-	unsigned long size;				// size of the file in bytes
 	long loc;									// block location of file
+	unsigned long size;				// size of the file in bytes
 	unsigned int num_blocks;	// number of blocks
+	char name[82];						// name of file
 	// attributes of file ('d': directory, 'f': file, 'a': available)
-	char attr[1];
-	char name[83];						// name of file
+	char attr[2];
 	} DE;
 
 // This is the volume control block structure for the file system

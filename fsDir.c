@@ -7,6 +7,7 @@
 #include "mfs.h"
 #include "fsFree.h"
 #include "fsHelpers.h"
+#include "fsDir.h"
 
 // Initialize a directory
 // If parent_loc == 0, this is the root directory
@@ -36,6 +37,7 @@ int init_dir(int parent_loc)
 
   // Directory "." entry initialization
   dir_array[0].size = num_bytes;
+  dir_array[0].num_blocks = num_blocks;
   dir_array[0].loc = dir_loc;
   time_t curr_time = time(NULL);
   dir_array[0].created = curr_time;
@@ -49,6 +51,7 @@ int init_dir(int parent_loc)
   if (parent_loc == 0)
     {
     dir_array[1].size = num_bytes;
+    dir_array[1].num_blocks = num_blocks;
     dir_array[1].loc = dir_loc;        // currently the only difference
     dir_array[1].created = curr_time;
     dir_array[1].modified = curr_time;
@@ -58,29 +61,33 @@ int init_dir(int parent_loc)
     {
     // Need to LBAread the parent to get all the data about the parent
     // Is this even necessary?
-    dir_array[1].size = num_bytes;
-    dir_array[1].loc = parent_loc;     // currently the only difference
-    dir_array[1].created = curr_time;
-    dir_array[1].modified = curr_time;
-    dir_array[1].accessed = curr_time;
+    DE *parent_dir = malloc(num_bytes);
+    if (LBAread(parent_dir, num_blocks, parent_loc) != num_blocks)
+      {
+      perror("LBAread failed when reading parent directory.\n");
+      return -1;
+      }
+    dir_array[1].size = parent_dir->size;
+    dir_array[1].num_blocks = num_blocks;
+    dir_array[1].loc = parent_loc;
+    dir_array[1].created = parent_dir->created;
+    dir_array[1].modified = parent_dir->modified;
+    dir_array[1].accessed = parent_dir->accessed;
+
+    free(parent_dir);
+    parent_dir = NULL;
     }
   strcpy(dir_array[1].attr, "d");
   strcpy(dir_array[1].name, "..");
 
   for (int i = 2; i < DE_COUNT; i++)
     {
-    // Directory "." entry initialization
-    // dir_array[i].size = 0;
-    // dir_array[i].loc = 0;
-    // dir_array[i].created = 0;
-    // dir_array[i].modified = 0;
-    // dir_array[i].accessed = 0;
+    // set all other directory entries to available
     strcpy(dir_array[i].attr, "a");
-    // strcpy(dir_array[i].name, "");
     }
 
-  print_de(&dir_array[0]);
-  print_de(&dir_array[1]);
+  // print_de(&dir_array[0]);
+  // print_de(&dir_array[1]);
 
   int blocks_written = LBAwrite(dir_array, num_blocks, dir_loc);
 
@@ -91,19 +98,6 @@ int init_dir(int parent_loc)
     }
 
   printf("LBAwrite blocks written: %d\n", blocks_written);
-
-  // set the current working directory to root if initializing root
-  if (parent_loc == 0)
-    {
-    // malloc then copy newly created root directory to current working
-    // directory array for ease of tracking.
-    cw_dir_array = malloc(num_bytes);
-    memcpy(cw_dir_array, dir_array, num_bytes);
-
-    // malloc then set the path to root.
-    cw_path = malloc(PATH_LENGTH);
-    strcpy(cw_path, "/");
-    }
   
   free(dir_array);
   dir_array = NULL;
@@ -169,14 +163,29 @@ int fs_mkdir(const char *pathname, mode_t mode)
   
   };
 
+int fs_stat(const char *path, struct fs_stat *buf)
+  {
+  DE *dir_array = parsePath(path);
+  if (dir_array == NULL)
+    {
+    return -1;
+    }
+  return 0;
+  }
+
 void print_dir(DE* dir_array)
   {
   printf("=================== Printing Directory Map ===================\n");
-  printf("Directory Location: %li\n\nindex  Size    Loc     Att\n", dir_array[0].loc);
+  printf("Directory Location: %li   Directory Name: %s\n\n"), dir_array[0].loc, dir_array[0].name;
+  printf("   idx  Size        Loc         Blocks  Att   idx  Size        Loc         Blocks  Att   idx  Size        Loc         Blocks  Att\n");
+
   for (int i = 0; i < DE_COUNT; i++)
     {
-    printf("%2d     %#06lx  %#06lx  %s\n", i, dir_array[i].size, dir_array[i].loc, dir_array[i].attr);
+    printf("    %2d  %#010lx  %#010lx  %#06x  %s  ", 
+        i, dir_array[i].size, dir_array[i].loc, dir_array[i].num_blocks, dir_array[i].attr);
+    if ((i + 1) % 3 == 0) printf("\n");
     }
+  printf("\n");
   }
 
 void print_de(DE* dir)

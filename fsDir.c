@@ -108,6 +108,54 @@ int init_dir(VCB *fs_vcb, int *freespace, int parent_loc)
         return dir_loc;
         }
 
+int fs_isFile(char * filename)
+        {
+                DE * fi = searchDir(filename);
+                char * str = 'f';
+                if(fi != NULL && strcmp(str,fi) == 0){
+                        return 1;
+                }
+                return 0;
+        }
+
+int fs_isDir(char * pathname)
+        {
+                DE * di = searchDir(pathname);
+                char * str = 'd';
+                if(di != NULL && strcmp(str,di) == 0){
+                        return 1;
+                }
+                return 0;
+        }
+
+//Search directory entry takes a pathname and returns the pointer to 
+//-the directory entry of file we're trying to locate and 
+//-returns null in case of it doesn't exist.
+DE * searchDir(char * path)
+        {
+                DE * dirE = parsePath(path);
+                if(dirE == NULL){
+                        perror("could not find the path\n");
+                        return NULL;
+                }
+
+                //finds the name of file or directory.
+                char * temp = malloc(256); //result here 
+                char * ch = strtok(path, "/"); //first split
+                while (ch != NULL) {
+                        strcpy(temp, ch);//copy result
+                        printf("%s\n", ch);
+                        ch = strtok(NULL, "/");//next split
+                }
+
+                for(int i=2; i<DE_COUNT; i++){
+                        if(strcmp(temp,dirE[i]->name)==0){ // use strcmp to compare 
+                                return dirE[i];
+                        }        
+                } 
+                return NULL;
+        }
+
 void print_dir(DE* dir_array)
         {
         printf("=================== Printing Directory Map ===================\n");

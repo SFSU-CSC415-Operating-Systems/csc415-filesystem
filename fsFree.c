@@ -29,7 +29,7 @@ int init_free(VCB *fs_vcb, int *freespace)
 
     // Set the last block of the freespace to the end flag.
     freespace[num_blocks] = 0xFFFFFFFE;
-
+    
     // Set a reference to point to the first free block of the drive
     fs_vcb->freespace_first = num_blocks + 1;
     fs_vcb->freespace_size = num_blocks;
@@ -82,7 +82,7 @@ int alloc_free(VCB *fs_vcb, int *freespace, int numberOfBlocks)
     int curr = fs_vcb->freespace_first;
     printf("First freespace block: %d\n", curr);
     int next = freespace[fs_vcb->freespace_first];
-    for (int i = 0; i < fs_vcb->freespace_avail - numberOfBlocks - 1; i++)
+    for (int i = 0; i < fs_vcb->freespace_avail - numberOfBlocks; i++)
         {
         if (curr == 0xFFFFFFFE)
             {

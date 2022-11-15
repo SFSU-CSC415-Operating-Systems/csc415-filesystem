@@ -109,7 +109,6 @@ int alloc_free(int numberOfBlocks)
 int load_free()
   {
   printf("***** load_free *****\n");
-  freespace = malloc(sizeof(int) * fs_vcb->number_of_blocks);
   int blocks_read = LBAread(freespace, fs_vcb->freespace_size, 1);
 
   if (blocks_read != fs_vcb->freespace_size)
@@ -131,7 +130,7 @@ void print_free()
   printf("Size of int:                    %lu\n", sizeof(int));
   for (int i = 0; i < 160; i++)
     {
-    printf("%#06x  ", freespace[i]);
+    printf("%#010x  ", freespace[i]);
     if ((i + 1) % 16 == 0)
       {
       printf("\n");

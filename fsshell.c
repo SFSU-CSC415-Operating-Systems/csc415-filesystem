@@ -73,6 +73,7 @@ int cmd_pwd (int argcnt, char *argvec[]);
 int cmd_history (int argcnt, char *argvec[]);
 int cmd_help (int argcnt, char *argvec[]);
 int cmd_pp (int argcnt, char *argvec[]);
+int cmd_nums (int argcnt, char *argvec[]);
 
 dispatch_t dispatchTable[] = {
 	{"ls", cmd_ls, "Lists the file in a directory"},
@@ -88,7 +89,8 @@ dispatch_t dispatchTable[] = {
 	{"pwd", cmd_pwd, "Prints the working directory"},
 	{"history", cmd_history, "Prints out the history"},
 	{"help", cmd_help, "Prints out help"},
-	{"pp", cmd_pp, "Test parsePath"}
+	{"pp", cmd_pp, "Test parsePath"},
+	{"nums", cmd_nums, "Test number sizes"}
 };
 
 static int dispatchcount = sizeof (dispatchTable) / sizeof (dispatch_t);
@@ -567,39 +569,6 @@ int cmd_pwd (int argcnt, char *argvec[])
 	}
 
 /****************************************************
-*  PP commmand (for testing parsePath)
-****************************************************/
-int cmd_pp (int argcnt, char *argvec[])
-	{
-#if (CMDPP_ON == 1)	
-	if (argcnt != 2)
-		{
-		printf ("Usage: pp path\n");
-		return (-1);
-		}
-	char * path = argvec[1];	//argument
-	
-	if (path[0] == '"')
-		{
-		if (path[strlen(path)-1] == '"')
-			{
-			//remove quotes from string
-			path = path + 1;
-			path[strlen(path) - 1] = 0;
-			}
-		}
-	DE* ret = parsePath (path);
-	if (ret == NULL)	//error
-		{
-		printf ("Could not find path: %s\n", path);
-		return -1;
-		}			
-#endif
-	print_dir(ret);
-	return 0;
-	}
-
-/****************************************************
 *  History commmand
 ****************************************************/
 int cmd_history (int argcnt, char *argvec[])
@@ -771,7 +740,7 @@ int main (int argc, char * argv[])
 		printf ("Start Partition Failed:  %d\n", retVal);
 		return (retVal);
 		}
-		
+	
 	retVal = initFileSystem (volumeSize / blockSize, blockSize);
 	
 	if (retVal != 0)
@@ -785,12 +754,12 @@ int main (int argc, char * argv[])
 		if(strcmp("lowtest", argv[4]) == 0)
 			runFSLowTest();
 
-
 	using_history();
 	stifle_history(200);	//max history entries
 	
 	while (1)
 		{
+		// printf("Before cmdin\n");
 		cmdin = readline("Prompt > ");
 #ifdef COMMAND_DEBUG
 		printf ("%s\n", cmdin);
@@ -824,4 +793,64 @@ int main (int argc, char * argv[])
 		free (cmd);
 		cmd = NULL;		
 		} // end while
+	}
+
+
+/****************************************************
+*  PP commmand (for testing parsePath)
+****************************************************/
+int cmd_pp (int argcnt, char *argvec[])
+	{
+#if (CMDPP_ON == 1)	
+	if (argcnt != 2)
+		{
+		printf ("Usage: pp path\n");
+		return (-1);
+		}
+	char * path = argvec[1];	//argument
+	
+	if (path[0] == '"')
+		{
+		if (path[strlen(path)-1] == '"')
+			{
+			//remove quotes from string
+			path = path + 1;
+			path[strlen(path) - 1] = 0;
+			}
+		}
+	DE* ret = parsePath (path);
+	if (ret == NULL)	//error
+		{
+		printf ("Could not find path: %s\n", path);
+		return -1;
+		}			
+#endif
+	print_dir(ret);
+	return 0;
+	}
+
+/****************************************************
+*  nums commmand (for testing number sizes)
+****************************************************/
+int cmd_nums (int argcnt, char *argvec[])
+	{
+	if (argcnt != 1)
+		{
+		printf ("Usage: nums\n");
+		return (-1);
+		}
+
+	printf("Data Type       Size in Bytes\n");
+	printf("time_t:         %lu\n", sizeof(time_t));
+	printf("unsigned int:   %lu\n", sizeof(unsigned int));
+	printf("unsigned long:  %lu\n", sizeof(unsigned long));
+	printf("long:           %lu\n", sizeof(long));
+	printf("unsigned short: %lu\n", sizeof(unsigned short));
+	printf("uint32_t:       %lu\n", sizeof(uint32_t));
+	printf("uint64_t:       %lu\n", sizeof(uint64_t));
+	printf("char:           %lu\n", sizeof(char));
+	printf("char[83]:       %lu\n", sizeof(char[83]));
+	printf("DE:             %lu\n", sizeof(DE));
+
+	return 0;
 	}

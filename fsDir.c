@@ -8,9 +8,6 @@
 #include "fsFree.h"
 #include "fsHelpers.h"
 
-#define DE_COUNT 64		  // initial number of d_entries to allocate to a directory
-#define PATH_LENGTH 1024 // initial path length
-
 // Initialize a directory
 // If parent_loc == 0, this is the root directory
 int init_dir(int parent_loc)
@@ -167,19 +164,24 @@ DE* parsePath(char *pathname)
   return dir_array;
   }
 
+int fs_mkdir(const char *pathname, mode_t mode)
+  {
+  
+  };
+
 void print_dir(DE* dir_array)
   {
   printf("=================== Printing Directory Map ===================\n");
-  printf("Directory Location: %d\n\nindex  Size    Loc     Att\n", dir_array[0].loc);
+  printf("Directory Location: %li\n\nindex  Size    Loc     Att\n", dir_array[0].loc);
   for (int i = 0; i < DE_COUNT; i++)
     {
-    printf("%2d     %#06x  %#06x  %s\n", i, dir_array[i].size, dir_array[i].loc, dir_array[i].attr);
+    printf("%2d     %#06lx  %#06lx  %s\n", i, dir_array[i].size, dir_array[i].loc, dir_array[i].attr);
     }
   }
 
 void print_de(DE* dir)
   {
   printf("=================== Printing Directory Entry ===================\n");
-  printf("Size: %d\nLocation: %d\nCreated: %ld\nModified: %ld\nAccessed: %ld\nAttribute: %s\nName: %s\n",
+  printf("Size: %lu\nLocation: %li\nCreated: %ld\nModified: %ld\nAccessed: %ld\nAttribute: %s\nName: %s\n",
           dir->size, dir->loc, dir->created, dir->modified, dir->accessed, dir->attr, dir->name);
   }

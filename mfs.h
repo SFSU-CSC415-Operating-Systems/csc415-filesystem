@@ -32,6 +32,9 @@ typedef u_int64_t uint64_t;
 typedef u_int32_t uint32_t;
 #endif
 
+#define DE_COUNT 64		  // initial number of d_entries to allocate to a directory
+#define PATH_LENGTH 1024 // initial path length
+
 // This structure is returned by fs_readdir to provide the caller with information
 // about each file as it iterates through a directory
 struct fs_diriteminfo
@@ -58,13 +61,15 @@ typedef struct
 // This struct is exactly 63 bytes in size
 typedef struct
 	{
-	char name[32];		// name of file
-	time_t created;		// time file was created
-	time_t modified;	// time file was last modified
-	time_t accessed;	// time file was last accessed
-	unsigned int size;	// size of the file in bytes
-	short loc;			// block location of file
-	char attr[1];		// attributes of file (1: directory, 2: file)
+	time_t created;						// time file was created
+	time_t modified;					// time file was last modified
+	time_t accessed;					// time file was last accessed
+	unsigned long size;				// size of the file in bytes
+	long loc;									// block location of file
+	unsigned int num_blocks;	// number of blocks
+	// attributes of file ('d': directory, 'f': file, 'a': available)
+	char attr[1];
+	char name[83];						// name of file
 	} DE;
 
 // This is the volume control block structure for the file system
@@ -103,15 +108,15 @@ int fs_isDir(char * pathname);		//return 1 if directory, 0 otherwise
 int fs_delete(char* filename);	//removes a file
 
 
-// This is the strucutre that is filled in from a call to fs_stat
+// This is the structure that is filled in from a call to fs_stat
 struct fs_stat
 	{
 	off_t     st_size;    		/* total size, in bytes */
 	blksize_t st_blksize; 		/* blocksize for file system I/O */
 	blkcnt_t  st_blocks;  		/* number of 512B blocks allocated */
-	time_t    st_accesstime;   	/* time of last access */
+	time_t    st_accesstime;  /* time of last access */
 	time_t    st_modtime;   	/* time of last modification */
-	time_t    st_createtime;   	/* time of last status change */
+	time_t    st_createtime;  /* time of last status change */
 	
 	/* add additional attributes here for your file system */
 	};

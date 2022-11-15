@@ -86,10 +86,10 @@ typedef struct
 	long magic;				// unique volume identifier
 	} VCB;
 
-extern VCB *fs_vcb;
-extern int *freespace;
-extern char *cw_path;
-extern DE *cw_dir_array;
+extern VCB *fs_vcb;				// volume control block
+extern int *freespace;		// freespace map
+extern char *cw_path;			// path string
+extern DE *cw_dir_array;  // directory structure (array of DEs)
 
 // Key directory functions
 int fs_mkdir(const char *pathname, mode_t mode);

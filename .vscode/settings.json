@@ -1,3 +1,9 @@
 {
+<<<<<<< HEAD
     "C_Cpp.errorSquiggles": "Disabled"
+=======
+  "files.associations": {
+    "fshelpers.h": "c"
+  }
+>>>>>>> f835085856597485fa1c88bac9d74e1f9031c784
 }

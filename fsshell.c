@@ -27,6 +27,7 @@
 
 #include "fsLow.h"
 #include "mfs.h"
+#include "fsDir.h"
 
 #define PERMISSIONS (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)
 
@@ -47,6 +48,7 @@
 #define CMDPWD_ON	0
 #define CMDTOUCH_ON	0
 #define CMDCAT_ON	0
+#define CMDPP_ON 1
 
 
 typedef struct dispatch_t
@@ -70,6 +72,7 @@ int cmd_cd (int argcnt, char *argvec[]);
 int cmd_pwd (int argcnt, char *argvec[]);
 int cmd_history (int argcnt, char *argvec[]);
 int cmd_help (int argcnt, char *argvec[]);
+int cmd_pp (int argcnt, char *argvec[]);
 
 dispatch_t dispatchTable[] = {
 	{"ls", cmd_ls, "Lists the file in a directory"},
@@ -77,14 +80,15 @@ dispatch_t dispatchTable[] = {
 	{"mv", cmd_mv, "Moves a file - source dest"},
 	{"md", cmd_md, "Make a new directory"},
 	{"rm", cmd_rm, "Removes a file or directory"},
-    {"touch",cmd_touch, "Touches/Creates a file"},
-    {"cat", cmd_cat, "Limited version of cat that displace the file to the console"},
+  {"touch",cmd_touch, "Touches/Creates a file"},
+  {"cat", cmd_cat, "Limited version of cat that displace the file to the console"},
 	{"cp2l", cmd_cp2l, "Copies a file from the test file system to the linux file system"},
 	{"cp2fs", cmd_cp2fs, "Copies a file from the Linux file system to the test file system"},
 	{"cd", cmd_cd, "Changes directory"},
 	{"pwd", cmd_pwd, "Prints the working directory"},
 	{"history", cmd_history, "Prints out the history"},
-	{"help", cmd_help, "Prints out help"}
+	{"help", cmd_help, "Prints out help"},
+	{"pp", cmd_pp, "Test parsePath"}
 };
 
 static int dispatchcount = sizeof (dispatchTable) / sizeof (dispatch_t);
@@ -559,6 +563,39 @@ int cmd_pwd (int argcnt, char *argvec[])
 	ptr = NULL;
 	
 #endif
+	return 0;
+	}
+
+/****************************************************
+*  PP commmand (for testing parsePath)
+****************************************************/
+int cmd_pp (int argcnt, char *argvec[])
+	{
+#if (CMDPP_ON == 1)	
+	if (argcnt != 2)
+		{
+		printf ("Usage: pp path\n");
+		return (-1);
+		}
+	char * path = argvec[1];	//argument
+	
+	if (path[0] == '"')
+		{
+		if (path[strlen(path)-1] == '"')
+			{
+			//remove quotes from string
+			path = path + 1;
+			path[strlen(path) - 1] = 0;
+			}
+		}
+	DE* ret = parsePath (path);
+	if (ret == NULL)	//error
+		{
+		printf ("Could not find path: %s\n", path);
+		return -1;
+		}			
+#endif
+	print_dir(ret);
 	return 0;
 	}
 

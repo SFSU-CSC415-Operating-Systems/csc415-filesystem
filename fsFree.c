@@ -8,9 +8,6 @@
 
 // Initialize the freespace as specified in the file system volume
 // control block.
-<<<<<<< Updated upstream
-int init_free(VCB *fs_vcb, int *freespace)
-=======
 int init_free()
   {
   printf("***** init_free *****\n");
@@ -26,7 +23,6 @@ int init_free()
 
   // Initialize all other freespace values to the subsequent block
   for (int i = 1; i < fs_vcb->number_of_blocks; i++)
->>>>>>> Stashed changes
     {
     freespace[i] = i + 1;
     }
@@ -66,15 +62,11 @@ int init_free()
 // alloc_free() allocates the numberOfBlocks, and returns the location of the
 // first block of the allocation.  This function also sets the reference to the
 // first block of the remaining free space to
-<<<<<<< Updated upstream
-int alloc_free(VCB *fs_vcb, int *freespace, int numberOfBlocks)
-=======
 int alloc_free(int numberOfBlocks)
   {
   printf("***** alloc_free *****\n");
 
   if (numberOfBlocks < 1)
->>>>>>> Stashed changes
     {
     perror("Cannot allocate zero blocks\n");
     return -1;
@@ -114,25 +106,11 @@ int alloc_free(int numberOfBlocks)
 //   freespace[(fs_vcb->freespace_first + (fs_vcb->freespace_avail - 1))]
 // increase fs_vcb->freespace_avail by the file/dir block size
 
-<<<<<<< Updated upstream
-int load_free(VCB *fs_vcb, int *freespace)
-    {
-    printf("***** load_free *****\n");
-    freespace = malloc(sizeof(int) * fs_vcb->number_of_blocks);
-    int blocks_read = LBAread(freespace, fs_vcb->freespace_size, 1);
-
-    if (blocks_read != fs_vcb->freespace_size)
-        {
-        perror("LBAread failed\n");
-        return -1;
-        }
-=======
 int load_free()
   {
   printf("***** load_free *****\n");
   freespace = malloc(sizeof(int) * fs_vcb->number_of_blocks);
   int blocks_read = LBAread(freespace, fs_vcb->freespace_size, 1);
->>>>>>> Stashed changes
 
   if (blocks_read != fs_vcb->freespace_size)
     {
@@ -140,9 +118,6 @@ int load_free()
     return -1;
     }
 
-<<<<<<< Updated upstream
-void print_free(VCB *fs_vcb, int *freespace)
-=======
   return blocks_read;
   }
 
@@ -155,7 +130,6 @@ void print_free()
   printf("First free block location:      %d\n", fs_vcb->freespace_first);
   printf("Size of int:                    %lu\n", sizeof(int));
   for (int i = 0; i < 160; i++)
->>>>>>> Stashed changes
     {
     printf("%#06x  ", freespace[i]);
     if ((i + 1) % 16 == 0)

@@ -28,7 +28,8 @@
 
 VCB *fs_vcb;
 int *freespace;
-char *cw_dir;
+char *cw_path;
+DE *cw_dir_array;
 
 int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 	{
@@ -72,9 +73,9 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 		freespace = malloc(sizeof(int) * fs_vcb->number_of_blocks);
 
 		// init_free initializes freespace_first and freespace_avail of the VCB
-		fs_vcb->freespace_loc = init_free(fs_vcb, freespace);
+		fs_vcb->freespace_loc = init_free();
 		// print_free(fs_vcb, freespace);
-		fs_vcb->root_loc = init_dir(fs_vcb, freespace, 0);
+		fs_vcb->root_loc = init_dir(0);
 
 		if (LBAwrite(fs_vcb, 1, 0) != 1)
 			{

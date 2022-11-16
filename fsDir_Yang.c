@@ -173,16 +173,16 @@ struct fs_diriteminfo *fs_readdir(fdDir *dirp)
 int fs_closedir(fdDir *dirp)
 {
         DIR *dir;
-        struct dirent *direntp;
-        //test part
+        struct dirent *entry;
         //prinf("The directory has already closed\n");
 
         //checkout the pathname is NUll, perror
-        if ((dir = opendir(".")) == NULL){
+        if ((dir = opendir("/")) == NULL){
         perror("opendir() error");
         }
-        while ((dp = fs_readdir(dir)) !=NULL){
-        return fs_opendir("");
+        while ((entry = fs_readdir(dir)) !=NULL){
+        //need some help buildup what is going to print out
+        //printf("xxxxxx")
         }
 	closedir(dir);
 }

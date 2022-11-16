@@ -147,16 +147,6 @@ DE* parsePath(char *pathname)
 
   for (int i = 0; i < tok_count - 1; i++)
     {
-    // int found = -1;
-    // for (int j = 0; j < DE_COUNT; j++)
-    //   {
-    //   if (strcmp(tok_array[i], dir_array[j].name) == 0 && strcmp(dir_array[j].attr, "d"))
-    //     {
-    //     found = 1;
-    //     LBAread(dir_array, num_blocks, dir_array[j].loc);
-    //     break;
-    //     }
-    //   }
 
     int found = get_de_index(tok_array[i], dir_array);
 
@@ -176,6 +166,11 @@ DE* parsePath(char *pathname)
   tok_array = NULL;
 
   return dir_array;
+  }
+
+char* fs_getcwd(char *pathname, size_t size)
+  {
+  return cw_path;
   }
 
 // This function makes a new directory at the pathname given

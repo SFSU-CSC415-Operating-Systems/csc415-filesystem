@@ -4,16 +4,16 @@ This will not be turned in.  You should be at the point where you have the file 
 
 This means that the following functions must be implemented and functional:
 
-    fs_parsePath    Mark    ParsePath returns a pointer to the directory that the element exists in.
-    fs_setcwd       Peter
-    fs_getcwd       Peter
+    fs_parsePath    Mark        DONE ParsePath returns a pointer to the directory that the element exists in.
+    fs_setcwd       Peter       
+    fs_getcwd       Peter       DONE
     fs_isFile       Zeel
     fs_isDir        Zeel
-    fs_mkdir        Zeel
+    fs_mkdir        Zeel        DONE
     fs_opendir      Chengkai
     fs_readdir      Chengkai
     fs_closedir     Chengkai
-    fs_stat         Mark
+    fs_stat         Mark        DONE
 
 And optimally complete
 

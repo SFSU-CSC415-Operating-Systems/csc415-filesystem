@@ -258,12 +258,11 @@ int fs_mkdir(const char *pathname, mode_t mode)
 		perror("LBAwrite failed when trying to write the directory\n");
 		}
 
+  // if the current directory is where the directory was created
+  // update the current directory
   if (dir_array[0].loc == cw_dir_array[0].loc)
     {
-    if (LBAread(cw_dir_array, cw_dir_array[0].num_blocks, cw_dir_array[0].loc) != cw_dir_array[0].num_blocks)
-      {
-      perror("LBAread failed when reading current working directory.\n");
-      }
+    memcpy(cw_dir_array, dir_array, dir_array[0].size);
     }
 
   // the following are malloc'd in functions or explicitly here

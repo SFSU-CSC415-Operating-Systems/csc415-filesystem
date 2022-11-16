@@ -12,7 +12,7 @@ This means that the following functions must be implemented and functional:
     fs_mkdir        Zeel        DONE
     fs_opendir      Chengkai    
     fs_readdir      Chengkai    
-    fs_closedir     Chengkai    
+    fs_closedir     Chengkai    DONE
     fs_stat         Mark        DONE
 
 And optimally complete

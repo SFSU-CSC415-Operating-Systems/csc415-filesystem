@@ -381,6 +381,37 @@ int fs_stat(const char *path, struct fs_stat *buf)
   return index_found;
   }
 
+//fs_closedir close the directory of the file system
+int fs_closedir(fdDir *dirp)
+  {
+  if (dirp == NULL)
+    {
+    perror("fs_closedir: close directory failed: fdDir is NULL\n");
+    return 0;
+    }
+
+  free(dirp);
+  dirp = NULL;
+
+  return 1;
+
+  // following code contributed by Chengkai Yang
+  // DIR *dir;
+  // struct dirent *entry;
+  // //prinf("The directory has already closed\n");
+
+  // //checkout the pathname is NUll, perror
+  // if ((dir = opendir("/")) == NULL){
+  // perror("opendir() error");
+  // }
+  // while ((entry = fs_readdir(dir)) !=NULL){
+  // //need some help buildup what is going to print out
+  // //printf("xxxxxx")
+  // }
+  // closedir(dir);
+  }
+
+
 // sets the current working path
 char* set_cw_path()
   {

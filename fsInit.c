@@ -25,6 +25,7 @@
 #include "mfs.h"
 #include "fsFree.h"
 #include "fsDir.h"
+#include "fsHelpers.h"
 
 VCB *fs_vcb;
 int *freespace;
@@ -94,7 +95,18 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 			}		
 		}
 
+<<<<<<< HEAD
 	print_free();
+=======
+	// malloc then copy newly created root directory to current working
+	// directory array for ease of tracking.
+	cw_dir_array = malloc(fs_vcb->block_size * fs_vcb->root_blocks);
+	LBAread(cw_dir_array, fs_vcb->root_blocks, fs_vcb->root_loc);
+
+	// malloc then set the path to root.
+	cw_path = malloc(PATH_LENGTH);
+	strcpy(cw_path, "/");
+>>>>>>> origin/feat_merge
 		
 	return 0;
 	}
@@ -117,4 +129,8 @@ void exitFileSystem ()
 	freespace = NULL;
 	free(fs_vcb);
 	fs_vcb = NULL;
+	free(cw_dir_array);
+	cw_dir_array = NULL;
+	free(cw_path);
+	cw_path = NULL;
 	}

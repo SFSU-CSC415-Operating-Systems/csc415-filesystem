@@ -30,6 +30,7 @@ int init_free()
   // Set the last block of the freespace to the end flag.
   freespace[num_blocks] = 0xFFFFFFFE;
 
+<<<<<<< HEAD
   // // zero out the rest of the free space
   // int free_left = (num_blocks * fs_vcb->block_size - fs_vcb->number_of_blocks * sizeof(int))/sizeof(int);
   // for (int i = num_blocks + 1; i < free_left; i++)
@@ -39,6 +40,8 @@ int init_free()
 
   // print_free();
 
+=======
+>>>>>>> origin/feat_merge
   // Set a reference to point to the first free block of the drive
   fs_vcb->freespace_first = num_blocks + 1;
   fs_vcb->freespace_size = num_blocks;
@@ -117,7 +120,11 @@ int alloc_free(int numberOfBlocks)
 
 int load_free()
   {
+<<<<<<< HEAD
   printf("***** load_free *****\n");
+=======
+  printf("\n***** load_free *****\n");
+>>>>>>> origin/feat_merge
   int blocks_read = LBAread(freespace, fs_vcb->freespace_size, 1);
 
   if (blocks_read != fs_vcb->freespace_size)

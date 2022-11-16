@@ -32,9 +32,6 @@ int init_dir(int parent_loc)
     return -1;
     }
 
-  // track number of blocks root directory occupies
-  fs_vcb->root_blocks = num_blocks;
-
   // Directory "." entry initialization
   dir_array[0].size = num_bytes;
   dir_array[0].num_blocks = num_blocks;
@@ -50,6 +47,8 @@ int init_dir(int parent_loc)
   // If parent_loc == 0, this is the root directory
   if (parent_loc == 0)
     {
+    // track number of blocks root directory occupies
+    fs_vcb->root_blocks = num_blocks;
     dir_array[1].size = num_bytes;
     dir_array[1].num_blocks = num_blocks;
     dir_array[1].loc = dir_loc;        // currently the only difference
@@ -101,6 +100,11 @@ int init_dir(int parent_loc)
   
   free(dir_array);
   dir_array = NULL;
+
+  if (LBAwrite(freespace, fs_vcb->freespace_size, 1) != fs_vcb->freespace_size)
+		{
+		perror("LBAwrite failed when trying to write the freespace\n");
+		}
           
   return dir_loc;
   }
@@ -128,62 +132,156 @@ DE* parsePath(char *pathname)
   char **tok_array = malloc(strlen(pathname) * sizeof(char*));
   char *lasts;
   char *tok = strtok_r(pathname, "/", &lasts);
-  tok_array[0] = tok;
-  int tok_count = 1;
+  int tok_count = 0;
 
   while (tok != NULL)
     {
-    tok = strtok_r(NULL, "/", &lasts);
     tok_array[tok_count++] = tok;
+    tok = strtok_r(NULL, "/", &lasts);
+    }
+
+  for (int i = 0; i < tok_count; i++)
+    {
+    printf("token %d: %s\n", i, tok_array[i]);
     }
 
   for (int i = 0; i < tok_count - 1; i++)
     {
-    int found = 0;
-    for (int j = 0; j < DE_COUNT; j++)
+    // int found = -1;
+    // for (int j = 0; j < DE_COUNT; j++)
+    //   {
+    //   if (strcmp(tok_array[i], dir_array[j].name) == 0 && strcmp(dir_array[j].attr, "d"))
+    //     {
+    //     found = 1;
+    //     LBAread(dir_array, num_blocks, dir_array[j].loc);
+    //     break;
+    //     }
+    //   }
+
+    int found = get_de_index(tok_array[i], dir_array);
+
+    if (found == -1) 
       {
-      if (strcmp(tok_array[i], dir_array[j].name) == 0 && strcmp(dir_array[j].attr, "d"))
-        {
-        found = 1;
-        LBAread(dir_array, num_blocks, dir_array[j].loc);
-        break;
-        }
-      }
-    if (!found) 
-      {
+      free(dir_array);
+      dir_array = NULL;
+      free(tok_array);
+      tok_array = NULL;
       return NULL;
       }
+
+    LBAread(dir_array, num_blocks, dir_array[found].loc);
     }
+  
+  free(tok_array);
+  tok_array = NULL;
 
   return dir_array;
   }
 
+// This function makes a new directory at the pathname given
+// returns the LBA block location of the directory array where the new
+// directory is created, otherwise -1 if mkdir fails.
 int fs_mkdir(const char *pathname, mode_t mode)
   {
-  
-  };
+  printf("****** fs_mkdir ******\n");
+  char *path = malloc(strlen(pathname) + 1);
+  strcpy(path, pathname);
+  printf("Path: %s\n", path);
 
-int fs_stat(const char *path, struct fs_stat *buf)
-  {
   DE *dir_array = parsePath(path);
-  char last_tok = get_last_tok(path);
+
   if (dir_array == NULL)
     {
-    printf("Invalid path: %s", path);
+    printf("Invalid path: %s\n", path);
     return -1;
     }
 
-  int index_found = -1;
-  for (int i = 2; i < DE_COUNT; i++)
+  char *last_tok = get_last_tok(path);
+  if (last_tok == NULL)
     {
-    if (strcmp(last_tok, dir_array[i].name) == 0)
-      index_found = i;
-      break;
+    free(dir_array);
+    dir_array = NULL;
+    free(path);
+    path = NULL;
+    free(last_tok);
+    last_tok = NULL;
+    return -1;
     }
+
+  int found = get_de_index(last_tok, dir_array);
+
+  if (found > -1)
+    {
+      printf("fs_mkdir: cannot create directory ‘%s’: No such file or directory\n", path);
+      return -1;
+    }
+
+  int new_dir_index = get_avail_de_idx(dir_array);
+  if (new_dir_index == -1)
+    {
+    return -1;
+    }
+
+  int new_dir_loc = init_dir(dir_array[0].loc);
+  
+  int num_blocks = get_num_blocks(sizeof(DE) * DE_COUNT, fs_vcb->block_size);
+  int num_bytes = num_blocks * fs_vcb->block_size;
+
+  // New directory entry initialization
+  dir_array[new_dir_index].size = num_bytes;
+  dir_array[new_dir_index].num_blocks = num_blocks;
+  dir_array[new_dir_index].loc = new_dir_loc;
+  time_t curr_time = time(NULL);
+  dir_array[new_dir_index].created = curr_time;
+  dir_array[new_dir_index].modified = curr_time;
+  dir_array[new_dir_index].accessed = curr_time;
+  strcpy(dir_array[new_dir_index].attr, "d");
+  strcpy(dir_array[new_dir_index].name, last_tok);
+
+  // the following are malloc'd in functions or explicitly here
+  // functions that malloc: parsePath, get_last_tok
+  free(dir_array);
+  dir_array = NULL;
+  free(last_tok);
+  last_tok = NULL;
+  free(path);
+  path = NULL;
+
+  // write all changes to VCB and freespace to disk
+	if (LBAwrite(fs_vcb, 1, 0) != 1)
+		{
+		perror("LBAwrite failed when trying to write the VCB\n");
+		}
+	
+	if (LBAwrite(freespace, fs_vcb->freespace_size, 1) != fs_vcb->freespace_size)
+		{
+		perror("LBAwrite failed when trying to write the freespace\n");
+		}
+
+  return new_dir_loc;
+  };
+
+
+// fills fs_stat buffer with data from the path provided
+// returns the index of the directory array if successful
+// otherwise -1 if it fails
+int fs_stat(const char *path, struct fs_stat *buf)
+  {
+  char *pathname = malloc(strlen(path) + 1);
+  strcpy(pathname, path);
+
+  DE *dir_array = parsePath(pathname);
+  if (dir_array == NULL)
+    {
+    printf("Invalid path: %s\n", pathname);
+    return -1;
+    }
+
+  int index_found = get_de_index(get_last_tok(pathname), dir_array);
   
   if (index_found == -1)
     {
-    perror("File/directory not found");
+    perror("File/directory not found\n");
     return -1;
     }
   
@@ -194,32 +292,67 @@ int fs_stat(const char *path, struct fs_stat *buf)
   buf->st_modtime = dir_array[index_found].modified;
   buf->st_createtime = dir_array[index_found].created;
 
+  // parsePath mallocs dir_array so needs to be freed
   free(dir_array);
   dir_array = NULL;
 
   return index_found;
   }
 
-char get_last_tok(char *path)
+
+// helper function to get the last token/file/directory name from a path
+char* get_last_tok(char *path)
   {
-  char last_tok[512];
   char *lasts;
   char *tok = strtok_r(path, "/", &lasts);
+  char *ret = malloc(sizeof(char) * 128);
 
   while (tok != NULL)
     {
+    strcpy(ret, tok);
     tok = strtok_r(NULL, "/", &lasts);
     }
-  
-  strcpy(last_tok, tok);
 
-  return last_tok;
+  return ret;
   }
 
+
+// helper function to retrieve the index of a named token in a directory
+// (e.g. directory entry array)
+// returns the index if it finds a match or -1 otherwise if not found
+int get_de_index(char *token, DE* dir_array)
+  {
+  for (int i = 0; i < DE_COUNT; i++)
+    {
+    if (strcmp(token, dir_array[i].name) == 0)
+      {
+      return i;
+      }
+    }
+  return -1;
+  }
+
+// helper function to get the first available directory entry in a
+// directory.  returns the index of the directory array upon success
+// or -1 otherwise
+int get_avail_de_idx(DE* dir_array)
+  {
+  for (int i = 2; i < DE_COUNT; i++)
+    {
+    if (strcmp("a", dir_array[i].attr) == 0)
+      {
+      return i;
+      }
+    }
+  perror("No available space in directory\n");
+  return -1;
+  }
+
+// print the entire directory array for debug purposes
 void print_dir(DE* dir_array)
   {
   printf("=================== Printing Directory Map ===================\n");
-  printf("Directory Location: %li   Directory Name: %s\n\n"), dir_array[0].loc, dir_array[0].name;
+  printf("Directory Location: %li   Directory Name: %s\n\n", dir_array[0].loc, dir_array[0].name);
   printf("   idx  Size        Loc         Blocks  Att   idx  Size        Loc         Blocks  Att   idx  Size        Loc         Blocks  Att\n");
 
   for (int i = 0; i < DE_COUNT; i++)
@@ -231,6 +364,7 @@ void print_dir(DE* dir_array)
   printf("\n");
   }
 
+// print a directory entry for debug purposes
 void print_de(DE* dir)
   {
   printf("=================== Printing Directory Entry ===================\n");

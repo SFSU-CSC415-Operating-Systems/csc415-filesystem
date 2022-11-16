@@ -197,6 +197,8 @@ int fs_setcwd(char *pathname)
     perror("LBAread failed when trying to read the directory\n");
     }
 
+  set_cw_path();
+
   return 0;
   }
 
@@ -326,6 +328,61 @@ int fs_stat(const char *path, struct fs_stat *buf)
   dir_array = NULL;
 
   return index_found;
+  }
+
+
+char* set_cw_path()
+  {
+  int num_blocks = get_num_blocks(sizeof(DE) * DE_COUNT, fs_vcb->block_size);
+  int num_bytes = num_blocks * fs_vcb->block_size;
+  DE *dir_array = malloc(num_bytes);
+
+  char **tok_array = malloc(MAX_PATH_LENGTH);
+  int tok_count = 0;
+
+  LBAread(dir_array, cw_dir_array[0].num_blocks, cw_dir_array[0].loc);
+  int search_loc = dir_array[0].loc;
+  int path_size = 0;
+  while (dir_array[0].loc != dir_array[1].loc)
+    {
+      LBAread(dir_array, dir_array[1].num_blocks, dir_array[1].loc);
+      for (int i = 2; i < DE_COUNT; i++)
+      {
+        if (dir_array[i].loc == search_loc)
+        {
+        int size_of_name = strlen(dir_array[i].name) + 1;
+        path_size += size_of_name;
+        tok_array[tok_count] = malloc(size_of_name);
+        strcpy(tok_array[tok_count++], dir_array[i].name);
+        break;
+        }
+      }
+      search_loc = dir_array[0].loc;
+    }
+
+  char *path = malloc(path_size);
+  strcpy(path, "/");
+  for (int i = tok_count - 1; i >= 0; i--)
+    {
+    strcat(path, tok_array[i]);
+
+    free(tok_array[i]);
+    tok_array[i] = NULL;
+
+    if (i > 0)
+      strcat(path, "/");
+    }
+
+  strcpy(cw_path, path);
+
+  free(tok_array[0]);
+  tok_array[0] = NULL;
+  free(dir_array);
+  dir_array = NULL;
+  free(tok_array);
+  tok_array = NULL;
+
+  return path;
   }
 
 // helper function to get the last token/file/directory name from a path

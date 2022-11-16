@@ -33,7 +33,7 @@ typedef u_int32_t uint32_t;
 #endif
 
 #define DE_COUNT 64		  // initial number of d_entries to allocate to a directory
-#define PATH_LENGTH 1024 // initial path length
+#define MAX_PATH_LENGTH 1024 // initial path length
 
 // This structure is returned by fs_readdir to provide the caller with information
 // about each file as it iterates through a directory

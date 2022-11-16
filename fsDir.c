@@ -381,6 +381,29 @@ int fs_stat(const char *path, struct fs_stat *buf)
   return index_found;
   }
 
+fdDir * fs_opendir(const char *pathname)
+  {
+  char *path = malloc(strlen(pathname) + 1);
+  strcpy(path, pathname);
+
+  DE *dir_array = parsePath(path);
+
+  int found = get_de_index(get_last_tok(path), dir_array);
+
+  fdDir *fd_dir = malloc(sizeof(fdDir));
+
+  fd_dir->d_reclen = dir_array[found].num_blocks;
+  fd_dir->dirEntryPosition = found;
+  fd_dir->directoryStartLocation = dir_array[found].loc;
+
+  free(path);
+  path = NULL;
+  free(dir_array);
+  dir_array = NULL;
+  
+  return fd_dir;
+  }
+
 //fs_closedir close the directory of the file system
 int fs_closedir(fdDir *dirp)
   {

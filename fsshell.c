@@ -76,6 +76,8 @@ int cmd_pp (int argcnt, char *argvec[]);
 int cmd_nums (int argcnt, char *argvec[]);
 int cmd_isfile (int argcnt, char *argvec[]);
 int cmd_isdir (int argcnt, char *argvec[]);
+int cmd_opendir (int argcnt, char *argvec[]);
+int cmd_readdir (int argcnt, char *argvec[]);
 
 dispatch_t dispatchTable[] = {
 	{"ls", cmd_ls, "Lists the file in a directory"},
@@ -83,8 +85,8 @@ dispatch_t dispatchTable[] = {
 	{"mv", cmd_mv, "Moves a file - source dest"},
 	{"md", cmd_md, "Make a new directory"},
 	{"rm", cmd_rm, "Removes a file or directory"},
-  {"touch",cmd_touch, "Touches/Creates a file"},
-  {"cat", cmd_cat, "Limited version of cat that displace the file to the console"},
+  	{"touch",cmd_touch, "Touches/Creates a file"},
+  	{"cat", cmd_cat, "Limited version of cat that displace the file to the console"},
 	{"cp2l", cmd_cp2l, "Copies a file from the test file system to the linux file system"},
 	{"cp2fs", cmd_cp2fs, "Copies a file from the Linux file system to the test file system"},
 	{"cd", cmd_cd, "Changes directory"},
@@ -94,7 +96,9 @@ dispatch_t dispatchTable[] = {
 	{"pp", cmd_pp, "Test parsePath"},
 	{"isfile", cmd_isfile, "Test isFile"},
 	{"isdir", cmd_isdir, "Test isDir"},
-	{"nums", cmd_nums, "Test number sizes"}
+	{"nums", cmd_nums, "Test number sizes"},
+	{"opendir", cmd_opendir, "Test opendir"},
+	{"readdir", cmd_readdir, "Test readdir"}
 };
 
 static int dispatchcount = sizeof (dispatchTable) / sizeof (dispatch_t);
@@ -904,4 +908,34 @@ int cmd_isdir (int argcnt, char *argvec[])
 		}
 
 	return 0;
+	}
+
+
+/****************************************************
+*  opendir commmand (for testing opendir)
+****************************************************/
+int cmd_opendir (int argcnt, char *argvec[])
+	{
+	if (argcnt != 2)
+		{
+		printf ("Usage: opendir path\n");
+		return (-1);
+		}
+
+	fdDir *fd_dir = fs_opendir(argvec[1]);
+
+	printf("dir_entry array index: %d", fd_dir->dirEntryPosition);
+	printf("directory LBA block:   %lu", fd_dir->dirEntryPosition);
+	printf("directory num_blocks:  %d", fd_dir->d_reclen);
+
+	return 0;
+	}
+
+
+/****************************************************
+*  isDir commmand (for testing isDir)
+****************************************************/
+int cmd_readdir (int argcnt, char *argvec[])
+	{
+	
 	}

@@ -10,7 +10,7 @@ This means that the following functions must be implemented and functional:
     fs_isFile       Zeel        DONE
     fs_isDir        Zeel        DONE
     fs_mkdir        Zeel        DONE
-    fs_opendir      Chengkai    
+    fs_opendir      Chengkai    DONE
     fs_readdir      Chengkai    
     fs_closedir     Chengkai    DONE
     fs_stat         Mark        DONE

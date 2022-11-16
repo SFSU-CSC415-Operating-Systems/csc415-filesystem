@@ -74,6 +74,7 @@ int cmd_history (int argcnt, char *argvec[]);
 int cmd_help (int argcnt, char *argvec[]);
 int cmd_pp (int argcnt, char *argvec[]);
 int cmd_nums (int argcnt, char *argvec[]);
+int cmd_isfile (int argcnt, char *argvec[]);
 
 dispatch_t dispatchTable[] = {
 	{"ls", cmd_ls, "Lists the file in a directory"},
@@ -90,6 +91,7 @@ dispatch_t dispatchTable[] = {
 	{"history", cmd_history, "Prints out the history"},
 	{"help", cmd_help, "Prints out help"},
 	{"pp", cmd_pp, "Test parsePath"},
+	{"isfile", cmd_isfile, "Test isFile"},
 	{"nums", cmd_nums, "Test number sizes"}
 };
 
@@ -850,6 +852,31 @@ int cmd_nums (int argcnt, char *argvec[])
 	printf("char:           %lu\n", sizeof(char));
 	printf("char[83]:       %lu\n", sizeof(char[83]));
 	printf("DE:             %lu\n", sizeof(DE));
+
+	return 0;
+	}
+
+
+
+/****************************************************
+*  isFile commmand (for testing isFile)
+****************************************************/
+int cmd_isfile (int argcnt, char *argvec[])
+	{
+	if (argcnt != 2)
+		{
+		printf ("Usage: isFile path\n");
+		return (-1);
+		}
+
+	if (fs_isFile(argvec[1]))
+		{
+		printf ("File: '%s'\t IS FILE\n", argvec[1]);
+		}
+	else
+		{
+		printf ("File: '%s'\t NOT FILE\n", argvec[1]);
+		}
 
 	return 0;
 	}

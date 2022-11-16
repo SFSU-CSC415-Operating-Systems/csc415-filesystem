@@ -155,7 +155,11 @@ fdDir * fs_opendir(const char *pathname);
 //fs_readdir read the directory of the file
 struct fs_diriteminfo fsDi;
 struct fs_diriteminfo *fs_readdir(fdDir *dirp)
-{
+//need to figure out struct
+//return the next directory entry
+//empty directory
+//need to track the dirp
+//create the fs_readdir file and work
 	DIR *dir;
 	dir = (DIR *)dirp;
 	struct dirent *de;

@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
+//Needs to add below this one to the fsDir for using opendir()
 #include <dirent.h>
 #include <errno.h>
 #include <sys/types.h>
@@ -113,16 +114,42 @@ int init_dir(VCB *fs_vcb, int *freespace, int parent_loc)
 
 //Editting from here by Chengkai Yang
 //fs_opendir open the directory of the file
-// .a/b/c/d
-// ..a/b/c/d
+
+static int locate_avail_fd();
+static int locate_file(const char*pathname);
+struct file_descriptor_t fd_table[FS_OPEN_MAX_COUNT];
+//file descriptor is one unique open file of the process.
+struct file_descriptor_t {
+    bool   is_used;       
+    int    file_index;              
+    size_t offset;  
+    char path_name[FS_PATHNAME_LEN];
+};
+
+
 fdDir * fs_opendir(const char *pathname);
 {
-        if(pathname == NULL)
-        return NULL;
+        //Finding the file using locate_file
+        int path_index = locate_file(pathname);
+        if(path_index == -1){
+                perror("file @[%s] doesn't exist\n", pathname);
+                return -1;
+        }
 
-        DIR *dir;
-        dir = opendir(pathname);
-        return ((fdDir*)dir);
+        int fd = locate_avail_fd();
+        //Return file descriptor index, or other wise -1 on failure
+        if (fd == -1){
+                perror("file descriptors already allocated\n");
+                return -1;
+        }
+        fd_table[fd].is_used    = true;
+	fd_table[fd].file_index = path_index;
+	fd_table[fd].offset     = 0;
+	
+	strcpy(fd_table[fd].path_name, pathname); 
+
+        return fd;
+
 }
 
 //fs_readdir read the directory of the file

@@ -207,8 +207,10 @@ int fs_mkdir(const char *pathname, mode_t mode)
     last_tok = NULL;
     return -1;
     }
+  printf("Last Token: '%s'\n", last_tok);
 
   int found = get_de_index(last_tok, dir_array);
+  printf("Found DE index: %d\n", found);
 
   if (found > -1)
     {
@@ -217,12 +219,14 @@ int fs_mkdir(const char *pathname, mode_t mode)
     }
 
   int new_dir_index = get_avail_de_idx(dir_array);
+  printf("New directory index: %d\n", new_dir_index);
   if (new_dir_index == -1)
     {
     return -1;
     }
 
   int new_dir_loc = init_dir(dir_array[0].loc);
+  printf("New directory LBA loc: %d\n", new_dir_loc);
   
   int num_blocks = get_num_blocks(sizeof(DE) * DE_COUNT, fs_vcb->block_size);
   int num_bytes = num_blocks * fs_vcb->block_size;
@@ -238,17 +242,8 @@ int fs_mkdir(const char *pathname, mode_t mode)
   strcpy(dir_array[new_dir_index].attr, "d");
   strcpy(dir_array[new_dir_index].name, last_tok);
 
-  // the following are malloc'd in functions or explicitly here
-  // functions that malloc: parsePath, get_last_tok
-  free(dir_array);
-  dir_array = NULL;
-  free(last_tok);
-  last_tok = NULL;
-  free(path);
-  path = NULL;
-
-  // write all changes to VCB and freespace to disk
-	if (LBAwrite(fs_vcb, 1, 0) != 1)
+  // write all changes to VCB, freespace, and directory to disk
+  if (LBAwrite(fs_vcb, 1, 0) != 1)
 		{
 		perror("LBAwrite failed when trying to write the VCB\n");
 		}
@@ -257,6 +252,28 @@ int fs_mkdir(const char *pathname, mode_t mode)
 		{
 		perror("LBAwrite failed when trying to write the freespace\n");
 		}
+	
+	if (LBAwrite(dir_array, dir_array[0].num_blocks, dir_array[0].loc) != dir_array[0].num_blocks)
+		{
+		perror("LBAwrite failed when trying to write the directory\n");
+		}
+
+  if (dir_array[0].loc == cw_dir_array[0].loc)
+    {
+    if (LBAread(cw_dir_array, cw_dir_array[0].num_blocks, cw_dir_array[0].loc) != cw_dir_array[0].num_blocks)
+      {
+      perror("LBAread failed when reading current working directory.\n");
+      }
+    }
+
+  // the following are malloc'd in functions or explicitly here
+  // functions that malloc: parsePath, get_last_tok
+  free(dir_array);
+  dir_array = NULL;
+  free(last_tok);
+  last_tok = NULL;
+  free(path);
+  path = NULL;
 
   return new_dir_loc;
   };

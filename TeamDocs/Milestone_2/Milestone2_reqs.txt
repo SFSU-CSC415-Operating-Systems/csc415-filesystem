@@ -7,7 +7,7 @@ This means that the following functions must be implemented and functional:
     fs_parsePath    Mark        DONE ParsePath returns a pointer to the directory that the element exists in.
     fs_setcwd       Peter       DONE
     fs_getcwd       Peter       DONE
-    fs_isFile       Zeel
+    fs_isFile       Zeel        DONE
     fs_isDir        Zeel
     fs_mkdir        Zeel        DONE
     fs_opendir      Chengkai

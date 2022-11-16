@@ -323,6 +323,27 @@ int fs_isFile(char *filename)
   return strcmp(dir_array[index_found].attr, "f") == 0 ? 1 : 0;
   }
 
+
+int fs_isDir(char *pathname)
+  {
+  DE *dir_array = parsePath(pathname);
+  if (dir_array == NULL)
+    {
+    printf("Invalid path: %s\n", pathname);
+    return -1;
+    }
+
+  int index_found = get_de_index(get_last_tok(pathname), dir_array);
+  
+  if (index_found == -1)
+    {
+    perror("File/directory not found\n");
+    return -1;
+    }
+
+  return strcmp(dir_array[index_found].attr, "d") == 0 ? 1 : 0;
+  }
+
 // fills fs_stat buffer with data from the path provided
 // returns the index of the directory array if successful
 // otherwise -1 if it fails

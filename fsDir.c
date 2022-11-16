@@ -172,6 +172,18 @@ char* fs_getcwd(char *pathname, size_t size)
   
 int fs_setcwd(char *pathname)
   {
+  if (strcmp(pathname, "/") == 0)
+    {
+    if (LBAread(cw_dir_array, fs_vcb->root_blocks, fs_vcb->root_loc) != fs_vcb->root_blocks)
+      {
+      perror("LBAread failed when trying to read the directory\n");
+      }
+
+    set_cw_path();
+    
+    return 0;
+    }
+
   DE *dir_array = parsePath(pathname);
 
   if (dir_array == NULL)
@@ -180,9 +192,7 @@ int fs_setcwd(char *pathname)
     return -1;
     }
 
-  // printf("Old path: '%s'\n", pathname);
   char *last_tok = get_last_tok(pathname);
-  // printf("New path: '%s'\n", pathname);
 
   int found = get_de_index(last_tok, dir_array);
 

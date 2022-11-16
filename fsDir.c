@@ -111,9 +111,11 @@ int init_dir(int parent_loc)
 
 // parsePath returns NULL if the path is invalid (e.g. one of the directories
 // does not exist) or the n-1 directory (array of DE's) pointer
-DE* parsePath(char *pathname)
+DE* parsePath(const char *path)
   {
   printf("***** parsePath *****\n");
+  char *pathname = malloc(strlen(path) + 1);
+  strcpy(pathname, path);
 
   int num_blocks = get_num_blocks(sizeof(DE) * DE_COUNT, fs_vcb->block_size);
   int num_bytes = num_blocks * fs_vcb->block_size;
@@ -138,11 +140,6 @@ DE* parsePath(char *pathname)
     {
     tok_array[tok_count++] = tok;
     tok = strtok_r(NULL, "/", &lasts);
-    }
-
-  for (int i = 0; i < tok_count; i++)
-    {
-    printf("token %d: %s\n", i, tok_array[i]);
     }
 
   for (int i = 0; i < tok_count - 1; i++)
@@ -172,6 +169,36 @@ char* fs_getcwd(char *pathname, size_t size)
   {
   return cw_path;
   }
+  
+int fs_setcwd(char *pathname)
+  {
+  DE *dir_array = parsePath(pathname);
+
+  if (dir_array == NULL)
+    {
+    printf("Invalid path: %s\n", pathname);
+    return -1;
+    }
+
+  // printf("Old path: '%s'\n", pathname);
+  char *last_tok = get_last_tok(pathname);
+  // printf("New path: '%s'\n", pathname);
+
+  int found = get_de_index(last_tok, dir_array);
+
+  if (found == -1)
+    {
+    printf("fs_setcwd: cannot change directory to '%s': No such file or directory\n", pathname);
+    return -1;
+    }
+
+  if (LBAread(cw_dir_array, dir_array[found].num_blocks, dir_array[found].loc) != dir_array[found].num_blocks)
+    {
+    perror("LBAread failed when trying to read the directory\n");
+    }
+
+  return 0;
+  }
 
 // This function makes a new directory at the pathname given
 // returns the LBA block location of the directory array where the new
@@ -192,16 +219,7 @@ int fs_mkdir(const char *pathname, mode_t mode)
     }
 
   char *last_tok = get_last_tok(path);
-  if (last_tok == NULL)
-    {
-    free(dir_array);
-    dir_array = NULL;
-    free(path);
-    path = NULL;
-    free(last_tok);
-    last_tok = NULL;
-    return -1;
-    }
+  
   printf("Last Token: '%s'\n", last_tok);
 
   int found = get_de_index(last_tok, dir_array);
@@ -209,8 +227,8 @@ int fs_mkdir(const char *pathname, mode_t mode)
 
   if (found > -1)
     {
-      printf("fs_mkdir: cannot create directory ‘%s’: No such file or directory\n", path);
-      return -1;
+    printf("fs_mkdir: cannot create directory ‘%s’: No such file or directory\n", path);
+    return -1;
     }
 
   int new_dir_index = get_avail_de_idx(dir_array);
@@ -310,10 +328,11 @@ int fs_stat(const char *path, struct fs_stat *buf)
   return index_found;
   }
 
-
 // helper function to get the last token/file/directory name from a path
-char* get_last_tok(char *path)
+char* get_last_tok(const char *pathname)
   {
+  char *path = malloc(strlen(pathname) + 1);
+  strcpy(path, pathname);
   char *lasts;
   char *tok = strtok_r(path, "/", &lasts);
   char *ret = malloc(sizeof(char) * 128);
@@ -362,8 +381,31 @@ int get_avail_de_idx(DE* dir_array)
 // print the entire directory array for debug purposes
 void print_dir(DE* dir_array)
   {
+  char *name = malloc(128);
+  int loc = dir_array[0].loc;
+  if (loc == dir_array[1].loc)
+    {
+    strcpy(name, "root");
+    }
+  else
+    {
+    int num_blocks = get_num_blocks(sizeof(DE) * DE_COUNT, fs_vcb->block_size);
+    int num_bytes = num_blocks * fs_vcb->block_size;
+    DE* name_dir_array = malloc(num_bytes);
+    LBAread(name_dir_array, dir_array[1].num_blocks, dir_array[1].loc);
+    for (int i = 2; i < DE_COUNT; i++)
+      {
+      if (name_dir_array[i].loc == loc)
+        {
+        strcpy(name, name_dir_array[i].name);
+        break;
+        }
+      }
+    free(name_dir_array);
+    name_dir_array = NULL;
+    }
   printf("=================== Printing Directory Map ===================\n");
-  printf("Directory Location: %li   Directory Name: %s\n\n", dir_array[0].loc, dir_array[0].name);
+  printf("Directory Location: %li   Directory Name: %s\n\n", dir_array[0].loc, name);
   printf("   idx  Size        Loc         Blocks  Att   idx  Size        Loc         Blocks  Att   idx  Size        Loc         Blocks  Att\n");
 
   for (int i = 0; i < DE_COUNT; i++)

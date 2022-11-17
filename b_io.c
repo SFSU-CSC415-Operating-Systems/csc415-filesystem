@@ -20,6 +20,9 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include "b_io.h"
+#include "fsDir.h"
+#include "mfs.h"
+#include "fsLow.h"
 
 #define MAXFCBS 20
 #define B_CHUNK_SIZE 512
@@ -27,9 +30,12 @@
 typedef struct b_fcb
 	{
 	/** TODO add al the information you need in the file control block **/
-	char * buf;		//holds the open file buffer
-	int index;		//holds the current position in the buffer
-	int buflen;		//holds how many valid bytes are in the buffer
+	DE * fi;          // holds the low level systems file info
+	char * buf;		    // holds the open file buffer
+	int index;		    // holds the current position in the buffer
+	int buflen;		    // holds how many valid bytes are in the buffer
+	int block_offset; // block offset from starting block
+  int flag;         // access flag for file
 	} b_fcb;
 	
 b_fcb fcbArray[MAXFCBS];
@@ -74,8 +80,31 @@ b_io_fd b_open (char * filename, int flags)
 		
 	if (startup == 0) b_init();  //Initialize our system
 	
-	returnFd = b_getFCB();				// get our own file descriptor
-										// check for error - all used FCB's
+	returnFd = b_getFCB();	// get our own file descriptor
+									// check for error - all used FCB's
+  if (returnFd == -1) 
+      {
+      perror("No free file control blocks available.");
+      return returnFd;
+      }
+    
+  DE *dir_array = parsePath(filename);
+
+  // Allocate buffer for file
+  fcbArray[returnFd].buf = malloc(B_CHUNK_SIZE);
+
+  if (fcbArray[returnFd].buf == NULL)
+    {
+    perror("Could not allocate buffer");
+    return EXIT_FAILURE;
+    }
+  
+  // Initialize file descriptor
+  fcbArray[returnFd].fi = GetFileInfo(filename);
+  fcbArray[returnFd].index = 0;
+  fcbArray[returnFd].block_offset = 0;
+  fcbArray[returnFd].buflen = 0;
+  fcbArray[returnFd].flag = flags;
 	
 	return (returnFd);						// all set
 	}

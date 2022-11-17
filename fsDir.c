@@ -149,6 +149,8 @@ DE* parsePath(const char *path)
 
     if (found == -1) 
       {
+      free(pathname);
+      pathname = NULL;
       free(dir_array);
       dir_array = NULL;
       free(tok_array);
@@ -269,28 +271,7 @@ int fs_mkdir(const char *pathname, mode_t mode)
 
   print_de(&dir_array[new_dir_index]);
 
-  // write all changes to VCB, freespace, and directory to disk
-  if (LBAwrite(fs_vcb, 1, 0) != 1)
-		{
-		perror("LBAwrite failed when trying to write the VCB\n");
-		}
-	
-	if (LBAwrite(freespace, fs_vcb->freespace_size, 1) != fs_vcb->freespace_size)
-		{
-		perror("LBAwrite failed when trying to write the freespace\n");
-		}
-	
-	if (LBAwrite(dir_array, dir_array[0].num_blocks, dir_array[0].loc) != dir_array[0].num_blocks)
-		{
-		perror("LBAwrite failed when trying to write the directory\n");
-		}
-
-  // if the current directory is where the directory was created
-  // update the current directory
-  if (dir_array[0].loc == cw_dir_array[0].loc)
-    {
-    memcpy(cw_dir_array, dir_array, dir_array[0].size);
-    }
+  update_all_fs(dir_array);
 
   // the following are malloc'd in functions or explicitly here
   // functions that malloc: parsePath, get_last_tok
@@ -315,6 +296,20 @@ int fs_rmdir(const char *pathname)
   char *last_tok = get_last_tok(path);
 
   int found_index = get_de_index(last_tok, dir_array);
+  printf("dir '%s' to be removed with index: %d\n", last_tok, found_index);
+
+  if (found_index < 2)
+    {
+    free(path);
+    path = NULL;
+    free(dir_array);
+    dir_array = NULL;
+    free(last_tok);
+    last_tok = NULL;
+    perror("fs_rmdir: remove directory failed: nice try...");
+    perror("you can't remove the current, parent, or root directory");
+    return -1;
+    }
 
   if (dir_array[found_index].attr != 'd')
     {
@@ -322,23 +317,71 @@ int fs_rmdir(const char *pathname)
     path = NULL;
     free(dir_array);
     dir_array = NULL;
-    perror("fs_rmdir: Remove directory failed: Not a directory");
+    free(last_tok);
+    last_tok = NULL;
+    perror("fs_rmdir: remove directory failed: Not a directory");
     return -1;
     }
 
-  if (!is_empty(dir_array))
+  if (!is_empty(&dir_array[found_index]))
     {
     free(path);
     path = NULL;
     free(dir_array);
     dir_array = NULL;
-    perror("fs_rmdir: Remove directory failed: Directory not empty");
+    free(last_tok);
+    last_tok = NULL;
+    perror("fs_rmdir: remove directory failed: Directory not empty");
     return -1;
     }
 
+  dir_array[found_index].name[0] = '\0';
   dir_array[found_index].attr = 'a';
 
   restore_free(&dir_array[found_index]);
+
+  update_all_fs(dir_array);
+
+  free(path);
+  path = NULL;
+  free(dir_array);
+  dir_array = NULL;
+  free(last_tok);
+  last_tok = NULL;
+
+  return 0;
+  }
+
+int fs_delete(char *filename)
+  {
+  printf("****** fs_delete ******\n");
+  char *path = malloc(strlen(filename) + 1);
+  strcpy(path, filename);
+
+  DE *dir_array = parsePath(path);
+
+  char *last_tok = get_last_tok(path);
+
+  int found_index = get_de_index(last_tok, dir_array);
+
+  if (dir_array[found_index].attr != 'f')
+    {
+    free(path);
+    path = NULL;
+    free(dir_array);
+    dir_array = NULL;
+    free(last_tok);
+    last_tok = NULL;
+    perror("fs_delete: Delete file failed: Not a file");
+    return -1;
+    }
+
+  dir_array[found_index].name[0] = '\0';
+  dir_array[found_index].attr = 'a';
+
+  restore_free(&dir_array[found_index]);
+
+  update_all_fs(dir_array);
 
   free(path);
   path = NULL;
@@ -540,6 +583,32 @@ int fs_closedir(fdDir *dirp)
   // closedir(dir);
   }
 
+void write_all_fs(DE *dir_array)
+  {
+  // write all changes to VCB, freespace, and directory to disk
+  if (LBAwrite(fs_vcb, 1, 0) != 1)
+		{
+		perror("LBAwrite failed when trying to write the VCB\n");
+		}
+	
+	if (LBAwrite(freespace, fs_vcb->freespace_size, 1) != fs_vcb->freespace_size)
+		{
+		perror("LBAwrite failed when trying to write the freespace\n");
+		}
+	
+	if (LBAwrite(dir_array, dir_array[0].num_blocks, dir_array[0].loc) != dir_array[0].num_blocks)
+		{
+		perror("LBAwrite failed when trying to write the directory\n");
+		}
+
+  // if the current directory is where the directory was created
+  // update the current directory
+  if (dir_array[0].loc == cw_dir_array[0].loc)
+    {
+    memcpy(cw_dir_array, dir_array, dir_array[0].size);
+    }
+  }
+
 // checks if directory is empty
 int is_empty(DE *d_entry)
   {
@@ -723,13 +792,15 @@ void print_dir(DE* dir_array)
     name_dir_array = NULL;
     }
   printf("=================== Printing Directory Map ===================\n");
-  printf("Directory Location: %li   Directory Name: %s\n\n", dir_array[0].loc, name);
-  printf("   idx  Size        Loc         Blocks  Att   idx  Size        Loc         Blocks  Att   idx  Size        Loc         Blocks  Att\n");
+  printf("Directory Location: %#010lx   Directory Name: %s\n\n", dir_array[0].loc*4 + 1024, name);
+  printf("   idx  Size        Loc in HD   Blocks  Att");
+  printf("   idx  Size        Loc in HD   Blocks  Att");
+  printf("   idx  Size        Loc in HD   Blocks  Att\n");
 
   for (int i = 0; i < DE_COUNT; i++)
     {
     printf("    %2d  %#010lx  %#010lx  %#06x  %c  ", 
-        i, dir_array[i].size, dir_array[i].loc, dir_array[i].num_blocks, dir_array[i].attr);
+        i, dir_array[i].size, dir_array[i].loc*sizeof(int) + 0x0400, dir_array[i].num_blocks, dir_array[i].attr);
     if ((i + 1) % 3 == 0) printf("\n");
     }
   printf("\n");
@@ -739,6 +810,8 @@ void print_dir(DE* dir_array)
 void print_de(DE* d_entry)
   {
   printf("=================== Printing Directory Entry ===================\n");
-  printf("Size: %lu\nLocation: %li\nCreated: %ld\nModified: %ld\nAccessed: %ld\nAttribute: %c\nName: %s\n",
-          d_entry->size, d_entry->loc, d_entry->created, d_entry->modified, d_entry->accessed, d_entry->attr, d_entry->name);
+  printf("Size: %#010lx\nLocation: %#010lx\nCreated: %#010lx\nModified: %#010lx\n",
+    d_entry->size, d_entry->loc*sizeof(int) + 0x0400, d_entry->created, d_entry->modified);
+  printf("Accessed: %#010lx\nAttribute: %c\nName: %s\n",
+    d_entry->accessed, d_entry->attr, d_entry->name);
   }

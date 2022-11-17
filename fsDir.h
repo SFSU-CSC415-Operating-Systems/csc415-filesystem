@@ -16,5 +16,7 @@ char* set_cw_path();
 
 int is_empty(DE *d_entry);
 
+void write_all_fs(DE *dir_array);
+
 // Returns a directory (an array of directory entries)
 DE* parsePath(const char *path);

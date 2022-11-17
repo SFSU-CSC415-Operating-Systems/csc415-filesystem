@@ -17,8 +17,8 @@ This means that the following functions must be implemented and functional:
 
 And optimally complete
 
-    fs_delete       Mark
-    fs_rmdir        Mark
+    fs_delete       Mark            DONE
+    fs_rmdir        Mark            DONE
 
 
 ParsePath:

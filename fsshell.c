@@ -953,7 +953,7 @@ int cmd_readdir (int argcnt, char *argvec[])
 
 	while(diriteminfo != NULL)
 		{
-		printf("Directory item info:\n   Name: %s,  Record Length: %d,  File Type: %c\n", diriteminfo->d_name, diriteminfo->d_reclen, diriteminfo->fileType);
+		printf("Directory item info %d:\n   Name: %s,  Record Length: %d,  File Type: %c\n", fd_dir->cur_item_index, diriteminfo->d_name, diriteminfo->d_reclen, diriteminfo->fileType);
 		diriteminfo = fs_readdir(fd_dir);
 		}
 	

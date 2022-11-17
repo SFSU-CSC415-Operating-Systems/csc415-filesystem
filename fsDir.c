@@ -264,8 +264,10 @@ int fs_mkdir(const char *pathname, mode_t mode)
   dir_array[new_dir_index].created = curr_time;
   dir_array[new_dir_index].modified = curr_time;
   dir_array[new_dir_index].accessed = curr_time;
-  dir_array[new_dir_index].attr == 'd';
+  dir_array[new_dir_index].attr = 'd';
   strcpy(dir_array[new_dir_index].name, last_tok);
+
+  print_de(&dir_array[new_dir_index]);
 
   // write all changes to VCB, freespace, and directory to disk
   if (LBAwrite(fs_vcb, 1, 0) != 1)
@@ -400,13 +402,14 @@ fdDir * fs_opendir(const char *pathname)
 
   printf("**************\n");
   fdDir *fd_dir = malloc(sizeof(fdDir));
-  struct fs_diriteminfo *diriteminfo = malloc(sizeof(struct fs_diriteminfo));
-  fd_dir->diriteminfo = diriteminfo;
 
   fd_dir->d_reclen = dir_array[found].num_blocks;
   fd_dir->dirEntryPosition = found;
   fd_dir->directoryStartLocation = dir_array[found].loc;
+  fd_dir->cur_item_index = 0;
   
+  struct fs_diriteminfo *diriteminfo = malloc(sizeof(struct fs_diriteminfo));
+  fd_dir->diriteminfo = diriteminfo;
   strcpy(fd_dir->diriteminfo->d_name, last_tok);
   fd_dir->diriteminfo->d_reclen = dir_array[found].num_blocks;
   fd_dir->diriteminfo->fileType = dir_array[found].attr;
@@ -436,21 +439,26 @@ struct fs_diriteminfo *fs_readdir(fdDir *dirp)
   DE* dir_array = malloc(num_bytes);
   LBAread(dir_array, num_blocks, dirp->directoryStartLocation);
 
-  while (dir_array[dirp->dirEntryPosition].name[0] == '\0' && dirp->dirEntryPosition < DE_COUNT - 1)
+  while (dir_array[dirp->cur_item_index].attr == 'a' && dirp->cur_item_index < DE_COUNT - 1)
     {
-    dirp->dirEntryPosition++;
+    dirp->cur_item_index++;
     }
 
-  if (dirp->dirEntryPosition == DE_COUNT - 1)
+  if (dirp->cur_item_index == DE_COUNT - 1)
     {
+    free(dir_array);
+    dir_array = NULL;
     return NULL;
     }
 
-  strcpy(dirp->diriteminfo->d_name, dir_array[dirp->dirEntryPosition].name);
+  strcpy(dirp->diriteminfo->d_name, dir_array[dirp->cur_item_index].name);
   dirp->diriteminfo->d_reclen = dirp->d_reclen;
-  dirp->diriteminfo->fileType = dir_array[dirp->dirEntryPosition].attr;
+  dirp->diriteminfo->fileType = dir_array[dirp->cur_item_index].attr;
 
-  dirp->++;
+  dirp->cur_item_index++;
+
+  free(dir_array);
+  dir_array = NULL;
 
   return dirp->diriteminfo;
   }
@@ -464,6 +472,8 @@ int fs_closedir(fdDir *dirp)
     return 0;
     }
 
+  free(dirp->diriteminfo);
+  dirp->diriteminfo = NULL;
   free(dirp);
   dirp = NULL;
 

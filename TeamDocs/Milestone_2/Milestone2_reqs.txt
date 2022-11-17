@@ -11,7 +11,7 @@ This means that the following functions must be implemented and functional:
     fs_isDir        Mark            DONE
     fs_mkdir        Mark            DONE
     fs_opendir      Mark            DONE
-    fs_readdir      Chengkai    
+    fs_readdir      Mark            DONE
     fs_closedir     Chengkai/Mark   DONE
     fs_stat         Mark            DONE
 

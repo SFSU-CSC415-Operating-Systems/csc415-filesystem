@@ -304,6 +304,51 @@ int fs_mkdir(const char *pathname, mode_t mode)
   return new_dir_loc;
   };
 
+int fs_rmdir(const char *pathname)
+  {
+  printf("****** fs_rmdir ******\n");
+  char *path = malloc(strlen(pathname) + 1);
+  strcpy(path, pathname);
+
+  DE *dir_array = parsePath(path);
+
+  char *last_tok = get_last_tok(path);
+
+  int found_index = get_de_index(last_tok, dir_array);
+
+  if (dir_array[found_index].attr != 'd')
+    {
+    free(path);
+    path = NULL;
+    free(dir_array);
+    dir_array = NULL;
+    perror("fs_rmdir: Remove directory failed: Not a directory");
+    return -1;
+    }
+
+  if (!is_empty(dir_array))
+    {
+    free(path);
+    path = NULL;
+    free(dir_array);
+    dir_array = NULL;
+    perror("fs_rmdir: Remove directory failed: Directory not empty");
+    return -1;
+    }
+
+  dir_array[found_index].attr = 'a';
+
+  restore_free(&dir_array[found_index]);
+
+  free(path);
+  path = NULL;
+  free(dir_array);
+  dir_array = NULL;
+  free(last_tok);
+  last_tok = NULL;
+
+  return 0;
+  }
 
 int fs_isFile(char *filename)
   {
@@ -495,6 +540,46 @@ int fs_closedir(fdDir *dirp)
   // closedir(dir);
   }
 
+// checks if directory is empty
+int is_empty(DE *d_entry)
+  {
+  printf("****** is_empty ******\n");
+
+  if (d_entry == NULL)
+    {
+    perror("is_empty: failed: directory entry is NULL\n");
+    return -1;
+    }
+  
+  if (d_entry->attr != 'd')
+    {
+    perror("is_empty: failed: not a directory\n");
+    return -1;
+    }
+
+  int num_blocks = get_num_blocks(sizeof(DE) * DE_COUNT, fs_vcb->block_size);
+  int num_bytes = num_blocks * fs_vcb->block_size;
+  DE* dir_array = malloc(num_bytes);  // malloc space for a directory
+
+  if (LBAread(dir_array, d_entry->num_blocks, d_entry->loc) != d_entry->num_blocks)
+    {
+    perror("is_empty: LBAread failed\n");
+    return -1;
+    }
+
+  int is_empty = 1;
+
+  for (int i = 2; i < DE_COUNT; i++)
+    {
+    if (dir_array[i].attr != 'a')
+      {
+      is_empty = 0;
+      break;
+      }
+    }
+  
+  return is_empty;
+  }
 
 // sets the current working path
 char* set_cw_path()
@@ -651,9 +736,9 @@ void print_dir(DE* dir_array)
   }
 
 // print a directory entry for debug purposes
-void print_de(DE* dir)
+void print_de(DE* d_entry)
   {
   printf("=================== Printing Directory Entry ===================\n");
   printf("Size: %lu\nLocation: %li\nCreated: %ld\nModified: %ld\nAccessed: %ld\nAttribute: %c\nName: %s\n",
-          dir->size, dir->loc, dir->created, dir->modified, dir->accessed, dir->attr, dir->name);
+          d_entry->size, d_entry->loc, d_entry->created, d_entry->modified, d_entry->accessed, d_entry->attr, d_entry->name);
   }

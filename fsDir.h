@@ -14,5 +14,7 @@ int get_avail_de_idx(DE* dir_array);
 
 char* set_cw_path();
 
+int is_empty(DE *d_entry);
+
 // Returns a directory (an array of directory entries)
 DE* parsePath(const char *path);

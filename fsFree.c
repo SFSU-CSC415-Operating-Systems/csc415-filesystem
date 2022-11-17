@@ -99,12 +99,36 @@ int alloc_free(int numberOfBlocks)
   return next;
   }
 
-// make_free_avail()
-// make a new function to make freespace available
-// set this block index in the freespace map 
-// to first block in file/dir being deleted:
-//   freespace[(fs_vcb->freespace_first + (fs_vcb->freespace_avail - 1))]
-// increase fs_vcb->freespace_avail by the file/dir block size
+int restore_free(DE *d_entry)
+  {
+  printf("***** restore_free *****\n");
+
+  if (d_entry == NULL)
+    {
+    perror("restore_free: Free space restore failed: d_entry can't be NULL");
+    return -1;
+    }
+
+  int curr = fs_vcb->freespace_first;
+  printf("First freespace block: %d\n", curr);
+  int next = freespace[fs_vcb->freespace_first];
+  for (int i = 0; i < fs_vcb->freespace_avail - 1; i++)
+    {
+    if (curr == 0xFFFFFFFE)
+      {
+      perror("Freespace end flag encountered prematurely\n");
+      return -1;
+      }
+    curr = next;
+    next = freespace[next];
+    }
+  printf("Current block to be set to first block of file/directory\
+   to be restored to free space: %d\n", curr);
+  freespace[curr] = d_entry->loc;
+  fs_vcb->freespace_avail += d_entry->num_blocks;
+
+  return d_entry->num_blocks;
+  }
 
 int load_free()
   {

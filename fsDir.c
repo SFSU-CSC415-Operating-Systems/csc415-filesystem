@@ -40,7 +40,7 @@ int init_dir(int parent_loc)
   dir_array[0].created = curr_time;
   dir_array[0].modified = curr_time;
   dir_array[0].accessed = curr_time;
-  strcpy(dir_array[0].attr, "d");
+  dir_array[0].attr = 'd';
   strcpy(dir_array[0].name, ".");
 
   // Parent directory ".." entry initialization
@@ -76,13 +76,13 @@ int init_dir(int parent_loc)
     free(parent_dir);
     parent_dir = NULL;
     }
-  strcpy(dir_array[1].attr, "d");
+  dir_array[1].attr = 'd';
   strcpy(dir_array[1].name, "..");
 
   for (int i = 2; i < DE_COUNT; i++)
     {
     // set all other directory entries to available
-    strcpy(dir_array[i].attr, "a");
+    dir_array[i].attr = 'a';
     }
 
   // print_de(&dir_array[0]);
@@ -264,7 +264,7 @@ int fs_mkdir(const char *pathname, mode_t mode)
   dir_array[new_dir_index].created = curr_time;
   dir_array[new_dir_index].modified = curr_time;
   dir_array[new_dir_index].accessed = curr_time;
-  strcpy(dir_array[new_dir_index].attr, "d");
+  dir_array[new_dir_index].attr == 'd';
   strcpy(dir_array[new_dir_index].name, last_tok);
 
   // write all changes to VCB, freespace, and directory to disk
@@ -305,6 +305,7 @@ int fs_mkdir(const char *pathname, mode_t mode)
 
 int fs_isFile(char *filename)
   {
+  printf("****** fs_isFile ******\n");
   DE *dir_array = parsePath(filename);
   if (dir_array == NULL)
     {
@@ -320,12 +321,13 @@ int fs_isFile(char *filename)
     return -1;
     }
 
-  return strcmp(dir_array[index_found].attr, "f") == 0 ? 1 : 0;
+  return dir_array[index_found].attr == 'f' ? 1 : 0;
   }
 
 
 int fs_isDir(char *pathname)
   {
+  printf("****** fs_isDir ******\n");
   DE *dir_array = parsePath(pathname);
   if (dir_array == NULL)
     {
@@ -341,7 +343,7 @@ int fs_isDir(char *pathname)
     return -1;
     }
 
-  return strcmp(dir_array[index_found].attr, "d") == 0 ? 1 : 0;
+  return dir_array[index_found].attr == 'd' ? 1 : 0;
   }
 
 // fills fs_stat buffer with data from the path provided
@@ -349,6 +351,7 @@ int fs_isDir(char *pathname)
 // otherwise -1 if it fails
 int fs_stat(const char *path, struct fs_stat *buf)
   {
+  printf("****** fs_stat ******\n");
   char *pathname = malloc(strlen(path) + 1);
   strcpy(pathname, path);
 
@@ -383,25 +386,73 @@ int fs_stat(const char *path, struct fs_stat *buf)
 
 fdDir * fs_opendir(const char *pathname)
   {
+  printf("****** fs_opendir ******\n");
   char *path = malloc(strlen(pathname) + 1);
   strcpy(path, pathname);
 
   DE *dir_array = parsePath(path);
+  printf("Path after parsePath: '%s'\n", path);
 
-  int found = get_de_index(get_last_tok(path), dir_array);
+  char *last_tok = get_last_tok(path);
 
+  int found = get_de_index(last_tok, dir_array);
+  printf("Path after get_last_tok: '%s'\n", path);
+
+  printf("**************\n");
   fdDir *fd_dir = malloc(sizeof(fdDir));
+  struct fs_diriteminfo *diriteminfo = malloc(sizeof(struct fs_diriteminfo));
+  fd_dir->diriteminfo = diriteminfo;
 
   fd_dir->d_reclen = dir_array[found].num_blocks;
   fd_dir->dirEntryPosition = found;
   fd_dir->directoryStartLocation = dir_array[found].loc;
+  
+  strcpy(fd_dir->diriteminfo->d_name, last_tok);
+  fd_dir->diriteminfo->d_reclen = dir_array[found].num_blocks;
+  fd_dir->diriteminfo->fileType = dir_array[found].attr;
 
   free(path);
   path = NULL;
   free(dir_array);
   dir_array = NULL;
+  free(last_tok);
+  last_tok = NULL;
   
   return fd_dir;
+  }
+
+struct fs_diriteminfo *fs_readdir(fdDir *dirp)
+  {
+  printf("****** fs_readdir ******\n");
+
+  if (dirp == NULL)
+    {
+    perror("fs_readdir: read directory failed: fdDir is NULL\n");
+    return NULL;
+    }
+
+  int num_blocks = get_num_blocks(sizeof(DE) * DE_COUNT, fs_vcb->block_size);
+  int num_bytes = num_blocks * fs_vcb->block_size;
+  DE* dir_array = malloc(num_bytes);
+  LBAread(dir_array, num_blocks, dirp->directoryStartLocation);
+
+  while (dir_array[dirp->dirEntryPosition].name[0] == '\0' && dirp->dirEntryPosition < DE_COUNT - 1)
+    {
+    dirp->dirEntryPosition++;
+    }
+
+  if (dirp->dirEntryPosition == DE_COUNT - 1)
+    {
+    return NULL;
+    }
+
+  strcpy(dirp->diriteminfo->d_name, dir_array[dirp->dirEntryPosition].name);
+  dirp->diriteminfo->d_reclen = dirp->d_reclen;
+  dirp->diriteminfo->fileType = dir_array[dirp->dirEntryPosition].attr;
+
+  dirp->++;
+
+  return dirp->diriteminfo;
   }
 
 //fs_closedir close the directory of the file system
@@ -512,6 +563,9 @@ char* get_last_tok(const char *pathname)
     tok = strtok_r(NULL, "/", &lasts);
     }
 
+  free(path);
+  path = NULL;
+
   return ret;
   }
 
@@ -538,7 +592,7 @@ int get_avail_de_idx(DE* dir_array)
   {
   for (int i = 2; i < DE_COUNT; i++)
     {
-    if (strcmp("a", dir_array[i].attr) == 0)
+    if (dir_array[i].attr == 'a')
       {
       return i;
       }
@@ -579,7 +633,7 @@ void print_dir(DE* dir_array)
 
   for (int i = 0; i < DE_COUNT; i++)
     {
-    printf("    %2d  %#010lx  %#010lx  %#06x  %s  ", 
+    printf("    %2d  %#010lx  %#010lx  %#06x  %c  ", 
         i, dir_array[i].size, dir_array[i].loc, dir_array[i].num_blocks, dir_array[i].attr);
     if ((i + 1) % 3 == 0) printf("\n");
     }
@@ -590,6 +644,6 @@ void print_dir(DE* dir_array)
 void print_de(DE* dir)
   {
   printf("=================== Printing Directory Entry ===================\n");
-  printf("Size: %lu\nLocation: %li\nCreated: %ld\nModified: %ld\nAccessed: %ld\nAttribute: %s\nName: %s\n",
+  printf("Size: %lu\nLocation: %li\nCreated: %ld\nModified: %ld\nAccessed: %ld\nAttribute: %c\nName: %s\n",
           dir->size, dir->loc, dir->created, dir->modified, dir->accessed, dir->attr, dir->name);
   }

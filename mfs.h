@@ -35,6 +35,21 @@ typedef u_int32_t uint32_t;
 #define DE_COUNT 64		  // initial number of d_entries to allocate to a directory
 #define MAX_PATH_LENGTH 1024 // initial path length
 
+// This is the directory entry structure for the file system
+// This struct is exactly 128 bytes in size
+typedef struct
+	{
+	time_t created;						// time file was created
+	time_t modified;					// time file was last modified
+	time_t accessed;					// time file was last accessed
+	long loc;									// block location of file
+	unsigned long size;				// size of the file in bytes
+	unsigned int num_blocks;	// number of blocks
+	char name[83];						// name of file
+	// attributes of file ('d': directory, 'f': file, 'a': available)
+	unsigned char attr;
+	} DE;
+
 // This structure is returned by fs_readdir to provide the caller with information
 // about each file as it iterates through a directory
 struct fs_diriteminfo
@@ -53,24 +68,12 @@ typedef struct
 	{
 	/*****TO DO:  Fill in this structure with what your open/read directory needs  *****/
 	unsigned short  d_reclen;		/*length of this record getNumBlocks() from line 19 fsDir.c*/
-	unsigned short	dirEntryPosition;	/*which directory entry position, like file pos (index of dir from directory array)*/
+	unsigned short	dirEntryPosition;	/*which directory entry position, like file pos 
+																			(index of dir from directory array)*/
 	uint64_t	directoryStartLocation;		/*Starting LBA of directory (DE loc) */
+	struct fs_diriteminfo *diriteminfo; // pointer to diriteminfo struct
+	unsigned int cur_item_index;				// current item index for tracking readdir loc
 	} fdDir;
-
-// This is the directory entry structure for the file system
-// This struct is exactly 128 bytes in size
-typedef struct
-	{
-	time_t created;						// time file was created
-	time_t modified;					// time file was last modified
-	time_t accessed;					// time file was last accessed
-	long loc;									// block location of file
-	unsigned long size;				// size of the file in bytes
-	unsigned int num_blocks;	// number of blocks
-	char name[82];						// name of file
-	// attributes of file ('d': directory, 'f': file, 'a': available)
-	char attr[2];
-	} DE;
 
 // This is the volume control block structure for the file system
 typedef struct

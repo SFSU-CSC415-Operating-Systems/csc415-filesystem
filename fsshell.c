@@ -924,10 +924,12 @@ int cmd_opendir (int argcnt, char *argvec[])
 
 	fdDir *fd_dir = fs_opendir(argvec[1]);
 
-	printf("dir_entry array index: %d", fd_dir->dirEntryPosition);
-	printf("directory LBA block:   %lu", fd_dir->dirEntryPosition);
-	printf("directory num_blocks:  %d", fd_dir->d_reclen);
+	printf("dir_entry array index: %d\n", fd_dir->dirEntryPosition);
+	printf("directory LBA block:   %lu\n", fd_dir->directoryStartLocation);
+	printf("directory num_blocks:  %d\n", fd_dir->d_reclen);
 
+	free(fd_dir);
+	fd_dir = NULL;
 	return 0;
 	}
 
@@ -937,5 +939,25 @@ int cmd_opendir (int argcnt, char *argvec[])
 ****************************************************/
 int cmd_readdir (int argcnt, char *argvec[])
 	{
+	if (argcnt != 2)
+		{
+		printf ("Usage: opendir path\n");
+		return (-1);
+		}
+
+	fdDir *fd_dir = fs_opendir(argvec[1]);
+
+	printf("dir_entry array index: %d\n", fd_dir->dirEntryPosition);
 	
+	struct fs_diriteminfo *diriteminfo = fs_readdir(fd_dir);
+
+	while(diriteminfo != NULL)
+		{
+		printf("Directory item info:\n   Name: %s,  Record Length: %d,  File Type: %c\n", diriteminfo->d_name, diriteminfo->d_reclen, diriteminfo->fileType);
+		diriteminfo = fs_readdir(fd_dir);
+		}
+	
+	fs_closedir(fd_dir);
+
+	return 0;
 	}

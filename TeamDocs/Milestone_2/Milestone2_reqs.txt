@@ -4,16 +4,16 @@ This will not be turned in.  You should be at the point where you have the file 
 
 This means that the following functions must be implemented and functional:
 
-    fs_parsePath    Mark        DONE
-    fs_setcwd       Peter       DONE
-    fs_getcwd       Peter       DONE
-    fs_isFile       Zeel        DONE
-    fs_isDir        Zeel        DONE
-    fs_mkdir        Zeel        DONE
-    fs_opendir      Chengkai    DONE
+    fs_parsePath    Mark            DONE
+    fs_setcwd       Mark            DONE
+    fs_getcwd       Mark            DONE
+    fs_isFile       Mark            DONE
+    fs_isDir        Mark            DONE
+    fs_mkdir        Mark            DONE
+    fs_opendir      Mark            DONE
     fs_readdir      Chengkai    
-    fs_closedir     Chengkai    DONE
-    fs_stat         Mark        DONE
+    fs_closedir     Chengkai/Mark   DONE
+    fs_stat         Mark            DONE
 
 And optimally complete
 

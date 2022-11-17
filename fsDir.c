@@ -229,9 +229,11 @@ int fs_mkdir(const char *pathname, mode_t mode)
 
 // parsePath returns NULL if the path is invalid (e.g. one of the directories
 // does not exist) or the n-1 directory (array of DE's) pointer
-DE* parsePath(char *pathname)
+DE* parsePath(const char *path)
   {
   printf("***** parsePath *****\n");
+  char *pathname = malloc(strlen(path) + 1);
+  strcpy(pathname, path);
 
   int num_blocks = get_num_blocks(sizeof(DE) * DE_COUNT, fs_vcb->block_size);
   int num_bytes = num_blocks * fs_vcb->block_size;
@@ -258,23 +260,8 @@ DE* parsePath(char *pathname)
     tok = strtok_r(NULL, "/", &lasts);
     }
 
-  for (int i = 0; i < tok_count; i++)
-    {
-    printf("token %d: %s\n", i, tok_array[i]);
-    }
-
   for (int i = 0; i < tok_count - 1; i++)
     {
-    // int found = -1;
-    // for (int j = 0; j < DE_COUNT; j++)
-    //   {
-    //   if (strcmp(tok_array[i], dir_array[j].name) == 0 && strcmp(dir_array[j].attr, "d"))
-    //     {
-    //     found = 1;
-    //     LBAread(dir_array, num_blocks, dir_array[j].loc);
-    //     break;
-    //     }
-    //   }
 
     int found = get_de_index(tok_array[i], dir_array);
 
@@ -296,6 +283,53 @@ DE* parsePath(char *pathname)
   return dir_array;
   }
 
+char* fs_getcwd(char *pathname, size_t size)
+  {
+  return cw_path;
+  }
+  
+int fs_setcwd(char *pathname)
+  {
+  if (strcmp(pathname, "/") == 0)
+    {
+    if (LBAread(cw_dir_array, fs_vcb->root_blocks, fs_vcb->root_loc) != fs_vcb->root_blocks)
+      {
+      perror("LBAread failed when trying to read the directory\n");
+      }
+
+    set_cw_path();
+    
+    return 0;
+    }
+
+  DE *dir_array = parsePath(pathname);
+
+  if (dir_array == NULL)
+    {
+    printf("Invalid path: %s\n", pathname);
+    return -1;
+    }
+
+  char *last_tok = get_last_tok(pathname);
+
+  int found = get_de_index(last_tok, dir_array);
+
+  if (found == -1)
+    {
+    printf("fs_setcwd: cannot change directory to '%s': No such file or directory\n", pathname);
+    return -1;
+    }
+
+  if (LBAread(cw_dir_array, dir_array[found].num_blocks, dir_array[found].loc) != dir_array[found].num_blocks)
+    {
+    perror("LBAread failed when trying to read the directory\n");
+    }
+
+  set_cw_path();
+
+  return 0;
+  }
+
 // This function makes a new directory at the pathname given
 // returns the LBA block location of the directory array where the new
 // directory is created, otherwise -1 if mkdir fails.
@@ -315,16 +349,7 @@ int fs_mkdir(const char *pathname, mode_t mode)
     }
 
   char *last_tok = get_last_tok(path);
-  if (last_tok == NULL)
-    {
-    free(dir_array);
-    dir_array = NULL;
-    free(path);
-    path = NULL;
-    free(last_tok);
-    last_tok = NULL;
-    return -1;
-    }
+  
   printf("Last Token: '%s'\n", last_tok);
 
   int found = get_de_index(last_tok, dir_array);
@@ -332,8 +357,8 @@ int fs_mkdir(const char *pathname, mode_t mode)
 
   if (found > -1)
     {
-      printf("fs_mkdir: cannot create directory ‘%s’: No such file or directory\n", path);
-      return -1;
+    printf("fs_mkdir: cannot create directory ‘%s’: No such file or directory\n", path);
+    return -1;
     }
 
   int new_dir_index = get_avail_de_idx(dir_array);
@@ -396,6 +421,47 @@ int fs_mkdir(const char *pathname, mode_t mode)
   };
 
 
+int fs_isFile(char *filename)
+  {
+  DE *dir_array = parsePath(filename);
+  if (dir_array == NULL)
+    {
+    printf("Invalid path: %s\n", filename);
+    return -1;
+    }
+
+  int index_found = get_de_index(get_last_tok(filename), dir_array);
+  
+  if (index_found == -1)
+    {
+    perror("File/directory not found\n");
+    return -1;
+    }
+
+  return strcmp(dir_array[index_found].attr, "f") == 0 ? 1 : 0;
+  }
+
+
+int fs_isDir(char *pathname)
+  {
+  DE *dir_array = parsePath(pathname);
+  if (dir_array == NULL)
+    {
+    printf("Invalid path: %s\n", pathname);
+    return -1;
+    }
+
+  int index_found = get_de_index(get_last_tok(pathname), dir_array);
+  
+  if (index_found == -1)
+    {
+    perror("File/directory not found\n");
+    return -1;
+    }
+
+  return strcmp(dir_array[index_found].attr, "d") == 0 ? 1 : 0;
+  }
+
 // fills fs_stat buffer with data from the path provided
 // returns the index of the directory array if successful
 // otherwise -1 if it fails
@@ -433,10 +499,127 @@ int fs_stat(const char *path, struct fs_stat *buf)
   return index_found;
   }
 
+fdDir * fs_opendir(const char *pathname)
+  {
+  char *path = malloc(strlen(pathname) + 1);
+  strcpy(path, pathname);
+
+  DE *dir_array = parsePath(path);
+
+  int found = get_de_index(get_last_tok(path), dir_array);
+
+  fdDir *fd_dir = malloc(sizeof(fdDir));
+
+  fd_dir->d_reclen = dir_array[found].num_blocks;
+  fd_dir->dirEntryPosition = found;
+  fd_dir->directoryStartLocation = dir_array[found].loc;
+
+  free(path);
+  path = NULL;
+  free(dir_array);
+  dir_array = NULL;
+  
+  return fd_dir;
+  }
+
+//fs_closedir close the directory of the file system
+int fs_closedir(fdDir *dirp)
+  {
+  if (dirp == NULL)
+    {
+    perror("fs_closedir: close directory failed: fdDir is NULL\n");
+    return 0;
+    }
+
+  free(dirp);
+  dirp = NULL;
+
+  return 1;
+
+  // following code contributed by Chengkai Yang
+  // DIR *dir;
+  // struct dirent *entry;
+  // //prinf("The directory has already closed\n");
+
+  // //checkout the pathname is NUll, perror
+  // if ((dir = opendir("/")) == NULL){
+  // perror("opendir() error");
+  // }
+  // while ((entry = fs_readdir(dir)) !=NULL){
+  // //need some help buildup what is going to print out
+  // //printf("xxxxxx")
+  // }
+  // closedir(dir);
+  }
+
+
+// sets the current working path
+char* set_cw_path()
+  {
+  int num_blocks = get_num_blocks(sizeof(DE) * DE_COUNT, fs_vcb->block_size);
+  int num_bytes = num_blocks * fs_vcb->block_size;
+  DE *dir_array = malloc(num_bytes);
+
+  char **tok_array = malloc(MAX_PATH_LENGTH);
+  int tok_count = 0;
+
+  LBAread(dir_array, cw_dir_array[0].num_blocks, cw_dir_array[0].loc);
+
+  if (dir_array[0].loc == dir_array[1].loc)
+    {
+    strcpy(cw_path, "/");
+    return cw_path;
+    }
+
+  int search_loc = dir_array[0].loc;
+  int path_size = 0;
+  while (dir_array[0].loc != dir_array[1].loc)
+    {
+    LBAread(dir_array, dir_array[1].num_blocks, dir_array[1].loc);
+    for (int i = 2; i < DE_COUNT; i++)
+      {
+        if (dir_array[i].loc == search_loc)
+          {
+          int size_of_name = strlen(dir_array[i].name) + 1;
+          path_size += size_of_name;
+          tok_array[tok_count] = malloc(size_of_name);
+          strcpy(tok_array[tok_count++], dir_array[i].name);
+          break;
+          }
+      }
+    search_loc = dir_array[0].loc;
+    }
+
+  char *path = malloc(path_size);
+  strcpy(path, "/");
+  for (int i = tok_count - 1; i >= 0; i--)
+    {
+    strcat(path, tok_array[i]);
+
+    free(tok_array[i]);
+    tok_array[i] = NULL;
+
+    if (i > 0)
+      strcat(path, "/");
+    }
+
+  strcpy(cw_path, path);
+
+  free(tok_array[0]);
+  tok_array[0] = NULL;
+  free(dir_array);
+  dir_array = NULL;
+  free(tok_array);
+  tok_array = NULL;
+
+  return path;
+  }
 
 // helper function to get the last token/file/directory name from a path
-char* get_last_tok(char *path)
+char* get_last_tok(const char *pathname)
   {
+  char *path = malloc(strlen(pathname) + 1);
+  strcpy(path, pathname);
   char *lasts;
   char *tok = strtok_r(path, "/", &lasts);
   char *ret = malloc(sizeof(char) * 128);
@@ -485,7 +668,31 @@ int get_avail_de_idx(DE* dir_array)
 // print the entire directory array for debug purposes
 void print_dir(DE* dir_array)
   {
+  char *name = malloc(128);
+  int loc = dir_array[0].loc;
+  if (loc == dir_array[1].loc)
+    {
+    strcpy(name, "root");
+    }
+  else
+    {
+    int num_blocks = get_num_blocks(sizeof(DE) * DE_COUNT, fs_vcb->block_size);
+    int num_bytes = num_blocks * fs_vcb->block_size;
+    DE* name_dir_array = malloc(num_bytes);
+    LBAread(name_dir_array, dir_array[1].num_blocks, dir_array[1].loc);
+    for (int i = 2; i < DE_COUNT; i++)
+      {
+      if (name_dir_array[i].loc == loc)
+        {
+        strcpy(name, name_dir_array[i].name);
+        break;
+        }
+      }
+    free(name_dir_array);
+    name_dir_array = NULL;
+    }
   printf("=================== Printing Directory Map ===================\n");
+<<<<<<< HEAD
 <<<<<<< HEAD
   printf("Directory Location: %li\n\nindex  Size    Loc     Att\n", dir_array[0].loc);
   for (int i = 0; i < DE_COUNT; i++)
@@ -496,6 +703,9 @@ void print_dir(DE* dir_array)
 
 =======
   printf("Directory Location: %li   Directory Name: %s\n\n", dir_array[0].loc, dir_array[0].name);
+=======
+  printf("Directory Location: %li   Directory Name: %s\n\n", dir_array[0].loc, name);
+>>>>>>> origin/features
   printf("   idx  Size        Loc         Blocks  Att   idx  Size        Loc         Blocks  Att   idx  Size        Loc         Blocks  Att\n");
 
   for (int i = 0; i < DE_COUNT; i++)

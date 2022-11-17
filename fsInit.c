@@ -104,7 +104,7 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 	LBAread(cw_dir_array, fs_vcb->root_blocks, fs_vcb->root_loc);
 
 	// malloc then set the path to root.
-	cw_path = malloc(PATH_LENGTH);
+	cw_path = malloc(MAX_PATH_LENGTH);
 	strcpy(cw_path, "/");
 >>>>>>> origin/feat_merge
 		

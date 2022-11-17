@@ -44,8 +44,8 @@
 #define CMDRM_ON	0
 #define CMDCP2L_ON	0
 #define CMDCP2FS_ON	0
-#define CMDCD_ON	0
-#define CMDPWD_ON	0
+#define CMDCD_ON	1
+#define CMDPWD_ON	1
 #define CMDTOUCH_ON	0
 #define CMDCAT_ON	0
 #define CMDPP_ON 1
@@ -74,6 +74,10 @@ int cmd_history (int argcnt, char *argvec[]);
 int cmd_help (int argcnt, char *argvec[]);
 int cmd_pp (int argcnt, char *argvec[]);
 int cmd_nums (int argcnt, char *argvec[]);
+int cmd_isfile (int argcnt, char *argvec[]);
+int cmd_isdir (int argcnt, char *argvec[]);
+int cmd_opendir (int argcnt, char *argvec[]);
+int cmd_readdir (int argcnt, char *argvec[]);
 
 dispatch_t dispatchTable[] = {
 	{"ls", cmd_ls, "Lists the file in a directory"},
@@ -81,8 +85,8 @@ dispatch_t dispatchTable[] = {
 	{"mv", cmd_mv, "Moves a file - source dest"},
 	{"md", cmd_md, "Make a new directory"},
 	{"rm", cmd_rm, "Removes a file or directory"},
-  {"touch",cmd_touch, "Touches/Creates a file"},
-  {"cat", cmd_cat, "Limited version of cat that displace the file to the console"},
+  	{"touch",cmd_touch, "Touches/Creates a file"},
+  	{"cat", cmd_cat, "Limited version of cat that displace the file to the console"},
 	{"cp2l", cmd_cp2l, "Copies a file from the test file system to the linux file system"},
 	{"cp2fs", cmd_cp2fs, "Copies a file from the Linux file system to the test file system"},
 	{"cd", cmd_cd, "Changes directory"},
@@ -90,7 +94,11 @@ dispatch_t dispatchTable[] = {
 	{"history", cmd_history, "Prints out the history"},
 	{"help", cmd_help, "Prints out help"},
 	{"pp", cmd_pp, "Test parsePath"},
-	{"nums", cmd_nums, "Test number sizes"}
+	{"isfile", cmd_isfile, "Test isFile"},
+	{"isdir", cmd_isdir, "Test isDir"},
+	{"nums", cmd_nums, "Test number sizes"},
+	{"opendir", cmd_opendir, "Test opendir"},
+	{"readdir", cmd_readdir, "Test readdir"}
 };
 
 static int dispatchcount = sizeof (dispatchTable) / sizeof (dispatch_t);
@@ -852,4 +860,82 @@ int cmd_nums (int argcnt, char *argvec[])
 	printf("DE:             %lu\n", sizeof(DE));
 
 	return 0;
+	}
+
+
+
+/****************************************************
+*  isFile commmand (for testing isFile)
+****************************************************/
+int cmd_isfile (int argcnt, char *argvec[])
+	{
+	if (argcnt != 2)
+		{
+		printf ("Usage: isFile path\n");
+		return (-1);
+		}
+
+	if (fs_isFile(argvec[1]))
+		{
+		printf ("File: '%s'\t IS FILE\n", argvec[1]);
+		}
+	else
+		{
+		printf ("File: '%s'\t NOT FILE\n", argvec[1]);
+		}
+
+	return 0;
+	}
+
+/****************************************************
+*  isDir commmand (for testing isDir)
+****************************************************/
+int cmd_isdir (int argcnt, char *argvec[])
+	{
+	if (argcnt != 2)
+		{
+		printf ("Usage: isDir path\n");
+		return (-1);
+		}
+
+	if (fs_isDir(argvec[1]))
+		{
+		printf ("File: '%s'\t IS DIRECTORY\n", argvec[1]);
+		}
+	else
+		{
+		printf ("File: '%s'\t NOT DIRECTORY\n", argvec[1]);
+		}
+
+	return 0;
+	}
+
+
+/****************************************************
+*  opendir commmand (for testing opendir)
+****************************************************/
+int cmd_opendir (int argcnt, char *argvec[])
+	{
+	if (argcnt != 2)
+		{
+		printf ("Usage: opendir path\n");
+		return (-1);
+		}
+
+	fdDir *fd_dir = fs_opendir(argvec[1]);
+
+	printf("dir_entry array index: %d", fd_dir->dirEntryPosition);
+	printf("directory LBA block:   %lu", fd_dir->dirEntryPosition);
+	printf("directory num_blocks:  %d", fd_dir->d_reclen);
+
+	return 0;
+	}
+
+
+/****************************************************
+*  isDir commmand (for testing isDir)
+****************************************************/
+int cmd_readdir (int argcnt, char *argvec[])
+	{
+	
 	}

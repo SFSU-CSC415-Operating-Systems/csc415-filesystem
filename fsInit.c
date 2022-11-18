@@ -56,29 +56,9 @@ int initFileSystem (uint64_t numberOfBlocks, uint64_t blockSize)
 			perror("Freespace load failed\n");
 			return -1;
 			};
-
-		// // read the root directory into tracking DE array.
-		// LBAread(cw_dir_array, fs_vcb->root_blocks, fs_vcb->root_loc);
-
-		// // malloc then set the path to root.
-		// cw_path = malloc(PATH_LENGTH);
-		// strcpy(cw_path, "/");
-		// printf("After after load_free()\n");
-
 		}
 	else
 		{
-		// typedef struct
-		// 	{
-		// 	int number_of_blocks;	// number of blocks in the file system
-		// 	int block_size;			// size of each block in the file system
-		// 	int freespace_loc;		// location of the first block of the freespace
-		// 	int freespace_first;	// reference to the first free block in the drive
-		// 	int freespace_avail;	// number of blocks available in freespace
-		// 	int root_loc;			// block location of root
-		// 	long magic;				// unique volume identifier
-		// 	} VCB;
-
 		fs_vcb->magic = 678267415;
 		fs_vcb->number_of_blocks = numberOfBlocks;
 		fs_vcb->block_size = blockSize;

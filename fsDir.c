@@ -6,7 +6,6 @@
 #include "fsLow.h"
 #include "fsFree.h"
 #include "fsHelpers.h"
-#include "fsDir.h"
 
 // Initialize a directory
 // If parent_loc == 0, this is the root directory

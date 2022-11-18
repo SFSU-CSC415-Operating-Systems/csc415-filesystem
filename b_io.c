@@ -26,16 +26,17 @@
 
 #define MAXFCBS 20
 #define B_CHUNK_SIZE 512
+#define FILE_BLOCKS 256
 
 typedef struct b_fcb
 	{
-	/** TODO add al the information you need in the file control block **/
-	DE * fi;          // holds the low level systems file info
-	char * buf;		    // holds the open file buffer
-	int index;		    // holds the current position in the buffer
-	int buflen;		    // holds how many valid bytes are in the buffer
-	int block_offset; // block offset from starting block
-  int flag;         // access flag for file
+    DE * fi;	    //holds the low level systems file info
+	char * buf;     // buffer for open file
+	int bufOff;		// current offset/position in buffer
+	int bufLen;		// number of bytes in the buffer
+	int curBlock;	// current block number
+	int blockLen;	// number of blocks in file
+    int accessMode; // file access mode
 	} b_fcb;
 	
 b_fcb fcbArray[MAXFCBS];
@@ -79,32 +80,65 @@ b_io_fd b_open (char * filename, int flags)
 	//
 		
 	if (startup == 0) b_init();  //Initialize our system
+    
+    DE *dir_array = parsePath(filename);
+
+	char *part3_tok = get_part3_tok(filename);
+
+	int found_index = get_de_index(part3_tok, dir_array);
+
+	char *buf = malloc(B_CHUNK_SIZE);
+
+	if (buf == NULL)
+		{
+		return (-1);
+		}
+
+	if (found_index == -1 && (flags & O_WRONLY || flags & O_RDWR))
+		{
+		int d_entry_index = get_avail_de_idx(dir_array);
+
+		if (d_entry_index == -1)
+			{
+			free(dir_array);
+			dir_array = NULL;
+			free(part3_tok);
+			part3_tok = NULL;
+			return NULL;
+			}
+
+		int new_file_loc = alloc_free(FILE_BLOCKS);
+		}
 	
 	returnFd = b_getFCB();	// get our own file descriptor
 									// check for error - all used FCB's
-  if (returnFd == -1) 
-      {
-      perror("No free file control blocks available.");
-      return returnFd;
-      }
-    
-  DE *dir_array = parsePath(filename);
+    if (returnFd == -1) 
+        {
+        perror("No free file control blocks available.");
+        return returnFd;
+        }
 
-  // Allocate buffer for file
-  fcbArray[returnFd].buf = malloc(B_CHUNK_SIZE);
+    // Allocate buffer for file
+    fcbArray[returnFd].buf = malloc(B_CHUNK_SIZE);
 
-  if (fcbArray[returnFd].buf == NULL)
-    {
-    perror("Could not allocate buffer");
-    return EXIT_FAILURE;
-    }
+    if (fcbArray[returnFd].buf == NULL)
+        {
+        perror("Could not allocate buffer");
+        return EXIT_FAILURE;
+        }
   
-  // Initialize file descriptor
-  fcbArray[returnFd].fi = GetFileInfo(filename);
-  fcbArray[returnFd].index = 0;
-  fcbArray[returnFd].block_offset = 0;
-  fcbArray[returnFd].buflen = 0;
-  fcbArray[returnFd].flag = flags;
+    // Initialize file descriptor
+    fcbArray[returnFd].fi = GetFileInfo(filename);
+    fcbArray[returnFd].bufOff = 0;
+    fcbArray[returnFd].curBlock = 0;
+    fcbArray[returnFd].bufLen = 0;
+    fcbArray[returnFd].accessMode = flags;
+
+	
+	free(dir_array);
+	dir_array = NULL;
+	free(part3_tok);
+	part3_tok = NULL;
 	
 	return (returnFd);						// all set
 	}
@@ -165,16 +199,117 @@ int b_write (b_io_fd fd, char * buffer, int count)
 //  +-------------+------------------------------------------------+--------+
 int b_read (b_io_fd fd, char * buffer, int count)
 	{
-
 	if (startup == 0) b_init();  //Initialize our system
 
 	// check that fd is between 0 and (MAXFCBS-1)
 	if ((fd < 0) || (fd >= MAXFCBS))
+	{
+		return (-1); //invalid file descriptor
+	}
+
+	if (fcbArray[fd].accessMode & O_WRONLY)
+	{
+		perror("b_read: file does not have write access");
+		return -1;
+	}
+	
+	// check to see if the fcb exists in this location
+	if (fcbArray[fd].fi == NULL)
 		{
-		return (-1); 					//invalid file descriptor
+		return -1;
 		}
-		
-	return (0);	//Change this
+
+	// available bytes in buffer
+	int availBytesInBuf = fcbArray[fd].bufLen - fcbArray[fd].bufOff;
+
+	// number of bytes already delivered
+	int bytesDelivered = (fcbArray[fd].curBlock * B_CHUNK_SIZE) - availBytesInBuf;
+
+	// limit count to file length
+	if ((count + bytesDelivered) > fcbArray[fd].fi->size)
+		{
+		count = fcbArray[fd].fi->size - bytesDelivered;
+
+		if (count < 0)
+			{
+			printf("Error: Count: %d   Delivered: %d   CurBlock: %d", count,
+							bytesDelivered, fcbArray[fd].curBlock);
+			}
+		}
+	
+	int part1, part2, part3, numBlocksToCopy, bytesRead;
+	if (availBytesInBuf >= count)
+		{
+        // part1 is the part1 section of the data
+        // it is the amount of bytes that will fill up the available bytes in buffer
+        // if the amount of data is less than the remaining amount in the buffer, we
+        // just copy the entire amount into the buffer.
+        part1 = count;
+        part2 = 0;
+        part3 = 0;
+		}
+    else
+        {
+        // the file is too big, so the part1 section is just what is left in buffer
+        part1 = availBytesInBuf;
+
+        // set the part3 section to all the bytes left in the file
+        part3 = count - availBytesInBuf;
+
+        // divide the part3 section by the chunk size to get the total number of
+        // complete blocks to copy and multiply by the chunk size to get the bytes
+        // that those blocks occupy
+        numBlocksToCopy = part3 / B_CHUNK_SIZE;
+        part2 = numBlocksToCopy * fs_vcb->block_size;
+
+        // finally subtract the complete bytes in part2 from the total bytes left to
+        // get the part3 bytes to put in buffer
+        part3 = part3 - part2;
+        }
+
+    // memcopy part1 section
+    if (part1 > 0)
+        {
+        memcpy(buffer, fcbArray[fd].buf + fcbArray[fd].bufOff, part1);
+        fcbArray[fd].bufOff += part1;
+        }
+
+    // LBAread all the complete blocks into the buffer
+    if (part2 > 0)
+        {
+        bytesRead = LBAread(buffer + part1, numBlocksToCopy, 
+        fcbArray[fd].curBlock + fcbArray[fd].fi->loc) * fs_vcb->block_size;
+        fcbArray[fd].curBlock += numBlocksToCopy;
+        part2 = bytesRead;
+        }
+
+    // LBAread remaining block into the fcb buffer, and reset buffer offset
+    if (part3 > 0)
+        {
+        bytesRead = LBAread(fcbArray[fd].buf, 1, 
+            fcbArray[fd].curBlock + fcbArray[fd].fi->loc) * fs_vcb->block_size;
+        fcbArray[fd].curBlock += 1;
+        fcbArray[fd].bufOff = 0;
+        fcbArray[fd].bufLen = bytesRead;
+
+    // if the bytesRead is less than what is left in the calculated amount,
+    // reset part3 to the smaller amount
+    if (bytesRead < part3)
+      {
+      part3 = bytesRead;
+      }
+    
+    // if the number of bytes is more than zero, copy the fd buffer to the
+    // buffer and set the offset to the position after the data amount.
+    if (part3 > 0)
+      {
+      memcpy(buffer + part1 + part2, fcbArray[fd].buf + fcbArray[fd].bufOff, 
+        fcbArray[fd].curBlock + fcbArray[fd].fi->loc);
+      fcbArray[fd].bufOff += part3;
+      }
+    }
+
+    return part1 + part2 + part3;
 	}
 	
 // Interface to Close the file	

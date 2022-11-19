@@ -209,7 +209,7 @@ int b_read (b_io_fd fd, char * buffer, int count)
 
 	if (fcbArray[fd].accessMode & O_WRONLY)
 	{
-		perror("b_read: file does not have write access");
+		perror("b_read: file does not have read access");
 		return -1;
 	}
 	

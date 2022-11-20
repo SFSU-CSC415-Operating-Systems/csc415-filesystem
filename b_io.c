@@ -387,7 +387,7 @@ int b_write (b_io_fd fd, char * buffer, int count)
   if (part2 > 0)
     {
     blocksRead = LBAread(buffer + part1, numBlocksToCopy, 
-    fcbArray[fd].curBlock + fcbArray[fd].fi->loc);
+      fcbArray[fd].curBlock + fcbArray[fd].fi->loc);
     fcbArray[fd].curBlock += numBlocksToCopy;
     part2 = blocksRead * fs_vcb->block_size;
     }

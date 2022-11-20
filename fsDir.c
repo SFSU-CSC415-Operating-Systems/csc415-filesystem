@@ -270,7 +270,11 @@ int fs_mkdir(const char *pathname, mode_t mode)
   print_de(&dir_array[new_dir_index]);
 
   // write new directory to file system
+<<<<<<< Updated upstream
   update_all_fs(dir_array);
+=======
+  write_all_fs(dir_array);
+>>>>>>> Stashed changes
 
   // the following are malloc'd in functions or explicitly here
   // functions that malloc: parsePath, get_last_tok
@@ -339,7 +343,7 @@ int fs_rmdir(const char *pathname)
 
   restore_free(&dir_array[found_index]);
 
-  update_all_fs(dir_array);
+  write_all_fs(dir_array);
 
   free(path);
   path = NULL;
@@ -380,7 +384,7 @@ int fs_delete(char *filename)
 
   restore_free(&dir_array[found_index]);
 
-  update_all_fs(dir_array);
+  write_all_fs(dir_array);
 
   free(path);
   path = NULL;

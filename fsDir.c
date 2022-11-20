@@ -240,7 +240,7 @@ int fs_mkdir(const char *pathname, mode_t mode)
 
   if (found > -1)
     {
-    printf("fs_mkdir: cannot create directory ‘%s’: No such file or directory\n", path);
+    printf("fs_mkdir: cannot create directory ‘%s’: file or directory exists\n", path);
     return -1;
     }
 
@@ -270,6 +270,7 @@ int fs_mkdir(const char *pathname, mode_t mode)
 
   print_de(&dir_array[new_dir_index]);
 
+  // write new directory to file system
   update_all_fs(dir_array);
 
   // the following are malloc'd in functions or explicitly here

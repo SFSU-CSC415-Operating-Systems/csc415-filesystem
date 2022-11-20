@@ -261,9 +261,23 @@ int b_seek (b_io_fd fd, off_t offset, int whence)
 		{
 		return (-1); 					//invalid file descriptor
 		}
-		
-		
-	return (0); //Change this
+
+  if (whence & SEEK_SET)
+    {
+    fcbArray[fd].bufOff = offset;
+    }
+
+  if (whence & SEEK_CUR)
+    {
+    fcbArray[fd].bufOff += offset;
+    }
+
+  if (whence & SEEK_END)
+    {
+    fcbArray[fd].bufOff = fcbArray[fd].fi->size + offset;
+    }
+	
+	return fcbArray[fd].bufOff; //Change this
 	}
 
 

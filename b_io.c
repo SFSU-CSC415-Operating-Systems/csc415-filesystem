@@ -202,7 +202,7 @@ b_io_fd b_open (char * filename, int flags)
     if (new_file_index == -1)
       {
       return -1;
-    }
+      }
 
     int new_file_loc = alloc_free(DEFAULT_FILE_BLOCKS);
     if (new_file_loc == -1)
@@ -211,12 +211,11 @@ b_io_fd b_open (char * filename, int flags)
       }
 
     // New directory entry initialization
-    dir_array[new_file_index].size = DEFAULT_FILE_BLOCKS * fs_vcb->block_size;
     if (fcbArray[returnFd].buf == NULL)
-        {
-        perror("Could not allocate buffer");
-        return EXIT_FAILURE;
-        }
+      {
+      perror("Could not allocate buffer");
+      return EXIT_FAILURE;
+      }
 
     // New directory entry initialization
     dir_array[new_file_index].size = 0;
@@ -240,7 +239,7 @@ b_io_fd b_open (char * filename, int flags)
   fcbArray[returnFd].bufOff = 0;
   fcbArray[returnFd].bufLen = 0;
   fcbArray[returnFd].curBlock = 0;
-  fcbArray[returnFd].numBlocks = get_num_blocks(fcbArray[returnFd].fi->size, fs_vcb->block_size);
+  // fcbArray[returnFd].numBlocks = fcbArray[returnFd].fi->num_blocks;
   fcbArray[returnFd].accessMode = flags;
 	
 	free(dir_array);
@@ -310,9 +309,9 @@ int b_write (b_io_fd fd, char * buffer, int count)
 		{
     // set the number of newly allocated blocks to the larger of (extra_blocks * 2)
     // or (fcbArray[fd].fi->num_blocks * 2)
-		extra_blocks = extra_blocks < fcbArray[fd].fi->num_blocks 
+		extra_blocks = fcbArray[fd].fi->num_blocks > extra_blocks
                   ? fcbArray[fd].fi->num_blocks * 2 : extra_blocks * 2;
-    fcbArray[fd].fi->num_blocks += extra_blocks;
+    fcbArray[fd].fi->num_blocks = extra_blocks;
 
     // allocate the extra blocks and save location
     extra_blocks = alloc_free(extra_blocks);
@@ -346,7 +345,7 @@ int b_write (b_io_fd fd, char * buffer, int count)
 			}
 		}
 	
-	int part1, part2, part3, numBlocksToCopy, blocksRead;
+	int part1, part2, part3, numBlocksToCopy, blocksWritten;
 	if (availBytesInBuf >= count)
 		{
     // part1 is the part1 section of the data
@@ -379,46 +378,75 @@ int b_write (b_io_fd fd, char * buffer, int count)
   // memcopy part1 section
   if (part1 > 0)
     {
-    memcpy(buffer, fcbArray[fd].buf + fcbArray[fd].bufOff, part1);
+    memcpy(fcbArray[fd].buf + fcbArray[fd].bufOff, buffer + bytesDelivered, part1);
     fcbArray[fd].bufOff += part1;
+
+    // if buffer full, write to disk
+    if (fcbArray[fd].bufOff >= B_CHUNK_SIZE)
+      {
+      blocksWritten = LBAwrite(fcbArray[fd].buf, 1, 
+        fcbArray[fd].fi->loc + fcbArray[fd].curBlock);
+      fcbArray[fd].curBlock += 1;
+      fcbArray[fd].bufOff = 0;
+      }
     }
 
   // LBAread all the complete blocks into the buffer
   if (part2 > 0)
     {
-    blocksRead = LBAread(buffer + part1, numBlocksToCopy, 
-      fcbArray[fd].curBlock + fcbArray[fd].fi->loc);
+    blocksWritten = LBAwrite(buffer + bytesDelivered + part1, numBlocksToCopy, 
+      fcbArray[fd].fi->loc + fcbArray[fd].curBlock);
     fcbArray[fd].curBlock += numBlocksToCopy;
-    part2 = blocksRead * fs_vcb->block_size;
+    part2 = blocksWritten * fs_vcb->block_size;
     }
 
+  // NEED TO HANDLE BLOCK RETURNS VS BYTE RETURNS
   // LBAread remaining block into the fcb buffer, and reset buffer offset
   if (part3 > 0)
     {
-    blocksRead = LBAread(fcbArray[fd].buf, 1, 
-        fcbArray[fd].curBlock + fcbArray[fd].fi->loc) * fs_vcb->block_size;
-    fcbArray[fd].curBlock += 1;
-    fcbArray[fd].bufOff = 0;
-    fcbArray[fd].bufLen = blocksRead * fs_vcb->block_size;
-
-    int totalBytesRead = fcbArray[fd].curBlock * fs_vcb->block_size
-
-    // if the blocksRead is less than what is left in the calculated amount,
-    // reset part3 to the smaller amount
-    if (fcbArray[fd].fi->size - fcbArray[fd].curBlock *  < part3)
+    // if the file size is smaller than what we have transferred into the
+    // buffer, set the buffer length to the remaining file size. otherwise, set
+    // it to the size of a block.
+    if (fcbArray[fd].curBlock * fs_vcb->block_size > fcbArray[fd].fi->size)
       {
-      part3 = blocksRead;
+      fcbArray[fd].bufLen = fcbArray[fd].fi->size - ((fcbArray[fd].curBlock - 1) * fs_vcb->block_size);
       }
-    
-    // if the number of bytes is more than zero, copy the fd buffer to the
-    // buffer and set the offset to the position after the data amount.
-    if (part3 > 0)
+    else
       {
-      memcpy(buffer + part1 + part2, fcbArray[fd].buf + fcbArray[fd].bufOff, 
-        fcbArray[fd].curBlock + fcbArray[fd].fi->loc);
-      fcbArray[fd].bufOff += part3;
+      fcbArray[fd].bufLen = fs_vcb->block_size;
+      }
+
+    // if the buffer length is less than what is left in the calculated amount,
+    // reset part3 to the smaller amount
+    if (fcbArray[fd].bufLen < part3)
+      {
+      part3 = fcbArray[fd].bufLen;
+      }
+
+    // copy the buffer into the file buffer
+    memcpy(fcbArray[fd].buf + fcbArray[fd].bufOff, buffer + bytesDelivered + part1 + part2, part3);
+    fcbArray[fd].bufOff += part3;
+
+    // if eof, write to disk
+    if (fcbArray[fd].bufLen < fs_vcb->block_size)
+      {
+      blocksWritten = LBAwrite(buffer + bytesDelivered + part1 + part2, 1, 
+        fcbArray[fd].fi->loc + fcbArray[fd].curBlock);
+      fcbArray[fd].curBlock += 1;
+      fcbArray[fd].bufOff =  0;
+      }
+    // if buffer full, write to disk
+    else if (fcbArray[fd].bufOff >= B_CHUNK_SIZE)
+      {
+      blocksWritten = LBAwrite(fcbArray[fd].buf, 1, 
+        fcbArray[fd].fi->loc + fcbArray[fd].curBlock);
+      fcbArray[fd].curBlock += 1;
+      fcbArray[fd].bufOff = 0;
       }
     }
+
+  bytesDelivered = part1 + part2 + part3;
+  fcbArray[fd].fi->size += bytesDelivered;
 
   return part1 + part2 + part3;
 	}
@@ -536,16 +564,24 @@ int b_read (b_io_fd fd, char * buffer, int count)
   if (part3 > 0)
     {
     blocksRead = LBAread(fcbArray[fd].buf, 1, 
-        fcbArray[fd].curBlock + fcbArray[fd].fi->loc) * fs_vcb->block_size;
+        fcbArray[fd].curBlock + fcbArray[fd].fi->loc);
     fcbArray[fd].curBlock += 1;
     fcbArray[fd].bufOff = 0;
-    fcbArray[fd].bufLen = blocksRead;
+
+    if (fcbArray[fd].curBlock * fs_vcb->block_size > fcbArray[fd].fi->size)
+      {
+      fcbArray[fd].bufLen = fcbArray[fd].fi->size - ((fcbArray[fd].curBlock - 1) * fs_vcb->block_size);
+      }
+    else
+      {
+      fcbArray[fd].bufLen = fs_vcb->block_size;
+      }
 
     // if the blocksRead is less than what is left in the calculated amount,
     // reset part3 to the smaller amount
-    if (blocksRead < part3)
+    if (fcbArray[fd].bufLen < part3)
       {
-      part3 = blocksRead;
+      part3 = fcbArray[fd].bufLen;
       }
     
     // if the number of bytes is more than zero, copy the fd buffer to the

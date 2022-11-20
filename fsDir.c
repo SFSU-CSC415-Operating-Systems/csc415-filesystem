@@ -270,11 +270,7 @@ int fs_mkdir(const char *pathname, mode_t mode)
   print_de(&dir_array[new_dir_index]);
 
   // write new directory to file system
-<<<<<<< Updated upstream
-  update_all_fs(dir_array);
-=======
   write_all_fs(dir_array);
->>>>>>> Stashed changes
 
   // the following are malloc'd in functions or explicitly here
   // functions that malloc: parsePath, get_last_tok

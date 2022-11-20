@@ -31,11 +31,12 @@
 typedef struct b_fcb
 	{
   DE * fi;	      //holds the low level systems file info
+  DE * dir_array; // holds the directory array where the file resides
 	char * buf;     // buffer for open file
 	int bufOff;		  // current offset/position in buffer
 	int bufLen;		  // number of bytes in the buffer
 	int curBlock;	  // current block number
-  int numBlocks;  // number of blocks
+  // int numBlocks;  // number of blocks
   int accessMode; // file access mode
 	} b_fcb;
 	
@@ -235,15 +236,19 @@ b_io_fd b_open (char * filename, int flags)
     memcpy(fcbArray[returnFd].fi, &dir_array[new_file_index], sizeof(DE));
     }
 
+  fcbArray[returnFd].dir_array = dir_array;
   fcbArray[returnFd].buf = buf;
   fcbArray[returnFd].bufOff = 0;
   fcbArray[returnFd].bufLen = 0;
   fcbArray[returnFd].curBlock = 0;
   // fcbArray[returnFd].numBlocks = fcbArray[returnFd].fi->num_blocks;
   fcbArray[returnFd].accessMode = flags;
-	
-	free(dir_array);
-	dir_array = NULL;
+
+  if (flags & O_TRUNC)
+    {
+    fcbArray[returnFd].fi->size = 0;
+    }
+  
 	free(last_tok);
 	last_tok = NULL;
 	
@@ -616,8 +621,3 @@ int b_close (b_io_fd fd)
 	{
 
 	}
-
-DE *getFileInfo(char *filename)
-  {
-  
-  }

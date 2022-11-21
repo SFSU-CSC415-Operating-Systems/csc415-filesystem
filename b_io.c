@@ -267,19 +267,28 @@ int b_seek (b_io_fd fd, off_t offset, int whence)
 		return (-1); 					//invalid file descriptor
 		}
 
+  int total_offset;
   if (whence & SEEK_SET)
     {
-    fcbArray[fd].bufOff = offset;
+    fcbArray[fd].curBlock = offset / B_CHUNK_SIZE;
+    fcbArray[fd].bufOff = offset % B_CHUNK_SIZE;
+    fcbArray[fd].bufLen = 0;
     }
 
   if (whence & SEEK_CUR)
     {
-    fcbArray[fd].bufOff += offset;
+    total_offset = (fcbArray[fd].curBlock * B_CHUNK_SIZE) + fcbArray[fd].bufOff + offset;
+    fcbArray[fd].curBlock = total_offset / B_CHUNK_SIZE;
+    fcbArray[fd].bufOff = total_offset % B_CHUNK_SIZE;
+    fcbArray[fd].bufLen = 0;
     }
 
   if (whence & SEEK_END)
     {
-    fcbArray[fd].bufOff = fcbArray[fd].fi->size + offset;
+    total_offset = fcbArray[fd].fi->size + offset;
+    fcbArray[fd].curBlock += total_offset / B_CHUNK_SIZE;
+    fcbArray[fd].bufOff = total_offset % B_CHUNK_SIZE;
+    fcbArray[fd].bufLen = 0;
     }
 	
 	return fcbArray[fd].bufOff; //Change this
@@ -619,5 +628,15 @@ int b_read (b_io_fd fd, char * buffer, int count)
 // Interface to Close the file	
 int b_close (b_io_fd fd)
 	{
+  if (!(fcbArray[fd].accessMode & O_RDONLY) && fcbArray[fd].bufOff > 0)
+    LBAwrite(fcbArray[fd].buf, 1, fcbArray[fd].fi->loc + fcbArray[fd].curBlock);
 
+  write_all_fs(fcbArray[fd].dir_array);
+  
+  free(fcbArray[fd].dir_array);
+  fcbArray[fd].dir_array = NULL;
+  free(fcbArray[fd].fi);
+  fcbArray[fd].fi = NULL;
+  free(fcbArray[fd].buf);
+  fcbArray[fd].buf = NULL;
 	}

@@ -316,7 +316,7 @@ int cmd_cat (int argcnt, char *argvec[])
                 {
                 readcnt = b_read (testfs_src_fd, buf, BUFFERLEN-1);
                 buf[readcnt] = '\0';
-                printf("%s", buf);
+                printf("%s\n", buf);
                 } while (readcnt == BUFFERLEN);
         b_close (testfs_src_fd);
 #endif
@@ -520,7 +520,7 @@ int cmd_cp2fs (int argcnt, char *argvec[])
 			return (-1);
 		}
 	
-	printf("******** cp2fs **********");
+	printf("******** cp2fs **********\n");
 	testfs_fd = b_open (dest, O_WRONLY | O_CREAT | O_TRUNC);
 	linux_fd = open (src, O_RDONLY);
 	do 

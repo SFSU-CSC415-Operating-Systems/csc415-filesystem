@@ -38,6 +38,7 @@ typedef struct b_fcb
 	int bufOff;		  // current offset/position in buffer
 	int bufLen;		  // number of bytes in the buffer
 	int curBlock;	  // current block number
+  int fileIndex;  // index of file in dir_array
   // int numBlocks;  // number of blocks
   int accessMode; // file access mode
 	} b_fcb;
@@ -192,6 +193,7 @@ b_io_fd b_open (char * filename, int flags)
   if (found_index > -1)
     {
     memcpy(fcbArray[returnFd].fi, &dir_array[found_index], sizeof(DE));
+    fcbArray[returnFd].fileIndex = found_index;
     }
   else
     {
@@ -224,6 +226,7 @@ b_io_fd b_open (char * filename, int flags)
 
     // copy new directory entry to fcbArray file info
     memcpy(fcbArray[returnFd].fi, &dir_array[new_file_index], sizeof(DE));
+    fcbArray[returnFd].fileIndex = new_file_index;
     }
 
   fcbArray[returnFd].dir_array = dir_array;
@@ -292,6 +295,7 @@ int b_seek (b_io_fd fd, off_t offset, int whence)
 // Based entirely off of b_read as provided by Prof Bierman code in class
 int b_write (b_io_fd fd, char * buffer, int count)
 	{
+  printf("****** b_write *******");
 	if (startup == 0) b_init();  //Initialize our system
 
   // should not happen, but checking anyways
@@ -320,13 +324,18 @@ int b_write (b_io_fd fd, char * buffer, int count)
 		return -1;
 		}
 
+  print_de(fcbArray[fd].fi);
+
+  printf("\nWrite count: %d\n", count);
 	// check if there is enough space in the final block to contain the entire
 	// file
   int extra_blocks = get_num_blocks(
     fcbArray[fd].fi->size + count - (fcbArray[fd].fi->num_blocks * fs_vcb->block_size),
     fs_vcb->block_size);
+
 	if (extra_blocks > 0)
 		{
+    printf("Extra blocks needed: %d\n", extra_blocks);
     // set the number of newly allocated blocks to the larger of (extra_blocks * 2)
     // or (fcbArray[fd].fi->num_blocks * 2)
 		extra_blocks = fcbArray[fd].fi->num_blocks > extra_blocks
@@ -349,12 +358,14 @@ int b_write (b_io_fd fd, char * buffer, int count)
 
   // available bytes in buffer
 	int availBytesInBuf = fcbArray[fd].bufLen - fcbArray[fd].bufOff;
+  printf("Available bytes in buffer: %d\n", availBytesInBuf);
 
 	// number of bytes already delivered
 	int bytesDelivered = (fcbArray[fd].curBlock * B_CHUNK_SIZE) - availBytesInBuf;
+  printf("Bytes Delivered: %d\n", bytesDelivered);
 
 	// limit count to file length
-	if ((count + bytesDelivered) > fcbArray[fd].fi->size)
+	if (fcbArray[fd].fi->size > 0 && (count + bytesDelivered) > fcbArray[fd].fi->size)
 		{
 		count = fcbArray[fd].fi->size - bytesDelivered;
 
@@ -365,9 +376,11 @@ int b_write (b_io_fd fd, char * buffer, int count)
 			}
 		}
 	
+  // printf("avib: %d\tcount: %d", availBytesInBuf, count);
 	int part1, part2, part3, numBlocksToCopy, blocksWritten;
 	if (availBytesInBuf >= count)
 		{
+    printf("availableBytesInfBuf >= count\n");
     // part1 is the part1 section of the data
     // it is the amount of bytes that will fill up the available bytes in buffer
     // if the amount of data is less than the remaining amount in the buffer, we
@@ -375,24 +388,31 @@ int b_write (b_io_fd fd, char * buffer, int count)
     part1 = count;
     part2 = 0;
     part3 = 0;
+    printf("  part1: %d,    part2: %d,    part3: %d\n", part1, part2, part3);
 		}
   else
     {
     // the file is too big, so the part1 section is just what is left in buffer
     part1 = availBytesInBuf;
+    // printf("  part1: %d\n", part1);
 
     // set the part3 section to all the bytes left in the file
     part3 = count - availBytesInBuf;
+    // printf("  part3: %d\n", part3);
 
     // divide the part3 section by the chunk size to get the total number of
     // complete blocks to copy and multiply by the chunk size to get the bytes
     // that those blocks occupy
     numBlocksToCopy = part3 / B_CHUNK_SIZE;
+    // printf("  numBlocksToCopy: %d\n", numBlocksToCopy);
+
     part2 = numBlocksToCopy * fs_vcb->block_size;
+    // printf("  part2: %d\n", part2);
 
     // finally subtract the complete bytes in part2 from the total bytes left to
     // get the part3 bytes to put in buffer
     part3 = part3 - part2;
+    printf("  part1: %d,    part2: %d,    part3: %d\n", part1, part2, part3);
     }
 
   // memcopy part1 section
@@ -427,13 +447,16 @@ int b_write (b_io_fd fd, char * buffer, int count)
     // if the file size is smaller than what we have transferred into the
     // buffer, set the buffer length to the remaining file size. otherwise, set
     // it to the size of a block.
+    printf("bytesInBuffer: %d     fileSize: %ld\n", fcbArray[fd].curBlock * fs_vcb->block_size, fcbArray[fd].fi->size);
     if (fcbArray[fd].curBlock * fs_vcb->block_size > fcbArray[fd].fi->size)
       {
       fcbArray[fd].bufLen = fcbArray[fd].fi->size - ((fcbArray[fd].curBlock - 1) * fs_vcb->block_size);
+      // printf("   EOF bufLen: %d", fcbArray[fd].bufLen);
       }
     else
       {
       fcbArray[fd].bufLen = fs_vcb->block_size;
+      // printf("   notEOF bufLen: %d\n", fcbArray[fd].bufLen);
       }
 
     // if the buffer length is less than what is left in the calculated amount,
@@ -446,9 +469,8 @@ int b_write (b_io_fd fd, char * buffer, int count)
     // copy the buffer into the file buffer
     memcpy(fcbArray[fd].buf + fcbArray[fd].bufOff, buffer + bytesDelivered + part1 + part2, part3);
     fcbArray[fd].bufOff += part3;
-
-    // if eof, write to disk
-    if (fcbArray[fd].bufLen < fs_vcb->block_size)
+    
+    if (fcbArray[fd].fi->size == 0)
       {
       blocksWritten = LBAwrite(buffer + bytesDelivered + part1 + part2, 1, 
         fcbArray[fd].fi->loc + fcbArray[fd].curBlock);
@@ -470,6 +492,11 @@ int b_write (b_io_fd fd, char * buffer, int count)
   fcbArray[fd].fi->modified = cur_time;
   bytesDelivered = part1 + part2 + part3;
   fcbArray[fd].fi->size += bytesDelivered;
+  printf("bytes delivered: %d\n", bytesDelivered);
+
+  memcpy(&fcbArray[fd].dir_array[fcbArray[fd].fileIndex], fcbArray[fd].fi, sizeof(DE));
+
+  write_dir(fcbArray[fd].dir_array);
 
   return part1 + part2 + part3;
 	}
@@ -499,6 +526,8 @@ int b_write (b_io_fd fd, char * buffer, int count)
 // Based entirely off of Prof Bierman code shared in class
 int b_read (b_io_fd fd, char * buffer, int count)
 	{
+  printf("******* b_read *******\n");
+
 	if (startup == 0) b_init();  //Initialize our system
 
 	// check that fd is between 0 and (MAXFCBS-1)
@@ -521,9 +550,11 @@ int b_read (b_io_fd fd, char * buffer, int count)
 
 	// available bytes in buffer
 	int availBytesInBuf = fcbArray[fd].bufLen - fcbArray[fd].bufOff;
+  printf("Available bytes in buffer: %d\n", availBytesInBuf);
 
 	// number of bytes already delivered
 	int bytesDelivered = (fcbArray[fd].curBlock * B_CHUNK_SIZE) - availBytesInBuf;
+  printf("Bytes Delivered: %d\n", bytesDelivered);
 
 	// limit count to file length
 	if ((count + bytesDelivered) > fcbArray[fd].fi->size)
@@ -540,13 +571,14 @@ int b_read (b_io_fd fd, char * buffer, int count)
 	int part1, part2, part3, numBlocksToCopy, blocksRead;
 	if (availBytesInBuf >= count)
 		{
-        // part1 is the part1 section of the data
-        // it is the amount of bytes that will fill up the available bytes in buffer
-        // if the amount of data is less than the remaining amount in the buffer, we
-        // just copy the entire amount into the buffer.
-        part1 = count;
-        part2 = 0;
-        part3 = 0;
+    // part1 is the part1 section of the data
+    // it is the amount of bytes that will fill up the available bytes in buffer
+    // if the amount of data is less than the remaining amount in the buffer, we
+    // just copy the entire amount into the buffer.
+    part1 = count;
+    part2 = 0;
+    part3 = 0;
+    printf("A  part1: %d,    part2: %d,    part3: %d\n", part1, part2, part3);
 		}
   else
     {
@@ -565,6 +597,7 @@ int b_read (b_io_fd fd, char * buffer, int count)
     // finally subtract the complete bytes in part2 from the total bytes left to
     // get the part3 bytes to put in buffer
     part3 = part3 - part2;
+    printf("B  part1: %d,    part2: %d,    part3: %d\n", part1, part2, part3);
     }
 
   // memcopy part1 section
@@ -611,8 +644,7 @@ int b_read (b_io_fd fd, char * buffer, int count)
     // buffer and set the offset to the position after the data amount.
     if (part3 > 0)
       {
-      memcpy(buffer + part1 + part2, fcbArray[fd].buf + fcbArray[fd].bufOff, 
-        fcbArray[fd].curBlock + fcbArray[fd].fi->loc);
+      memcpy(buffer + part1 + part2, fcbArray[fd].buf + fcbArray[fd].bufOff, part3);
       fcbArray[fd].bufOff += part3;
       }
     }

@@ -23,6 +23,8 @@
 #include "fsDir.h"
 #include "mfs.h"
 #include "fsLow.h"
+#include "fsHelpers.h"
+#include "fsFree.h"
 
 #define MAXFCBS 20
 #define B_CHUNK_SIZE 512
@@ -85,7 +87,7 @@ b_io_fd b_open (char * filename, int flags)
 	int found_index = get_de_index(last_tok, dir_array);
 
   // check all invalid cases if no file/directory found
-  if (found_index == -1)
+  if (found_index < 0)
     {
     int error_encountered = 0;
     // cannot read only a file that does not exist 
@@ -102,13 +104,6 @@ b_io_fd b_open (char * filename, int flags)
       error_encountered = 1;
       }
 
-    // cannot truncate a file if the file does not exist
-    if (flags & O_TRUNC)
-      {
-      perror("b_open: file not found to be truncated\n");
-      error_encountered = 1;
-      }
-
     if (error_encountered)
       {
       free(dir_array);
@@ -119,34 +114,36 @@ b_io_fd b_open (char * filename, int flags)
       return -2;
       }
     }
-
-  // check if the DE is of a directory
-  if (dir_array[found_index].attr == 'd')
+  else
     {
-    printf("b_open: '%s' is a directory and cannot be opened as a file\n",
-          dir_array[found_index].name);
+    // check if the DE is of a directory
+    if (dir_array[found_index].attr == 'd')
+      {
+      printf("b_open: '%s' is a directory and cannot be opened as a file\n",
+            dir_array[found_index].name);
 
-    free(dir_array);
-    dir_array = NULL;
-    free(last_tok);
-    last_tok = NULL;
+      free(dir_array);
+      dir_array = NULL;
+      free(last_tok);
+      last_tok = NULL;
+        
+      return -2;
+      }
+
+    // // check if this DE is available
+    // if (!(dir_array[found_index].attr == 'f'))
+    //   {
+    //   printf("b_open: something catastrophic happened: ");
+    //   printf("directory array index %d is not available\n",
+    //         found_index);
       
-    return -2;
-    }
-
-  // check if this DE is available
-  if (!(dir_array[found_index].attr == 'a'))
-    {
-    printf("b_open: something catastrophic happened: ");
-    printf("directory array index %d is not available\n",
-          found_index);
-    
-    free(dir_array);
-    dir_array = NULL;
-    free(last_tok);
-    last_tok = NULL;
-    
-    return -2;
+    //   free(dir_array);
+    //   dir_array = NULL;
+    //   free(last_tok);
+    //   last_tok = NULL;
+      
+    //   return -2;
+    //   }
     }
 
 	char *buf = malloc(B_CHUNK_SIZE);
@@ -179,7 +176,7 @@ b_io_fd b_open (char * filename, int flags)
   // malloc file directory entry
   fcbArray[returnFd].fi = malloc(sizeof(DE));
 
-  if (fcbArray[returnFd].fi)
+  if (fcbArray[returnFd].fi == NULL)
     {
     perror("b_open: fcbArray file info malloc failed\n");
     free(dir_array);
@@ -204,18 +201,11 @@ b_io_fd b_open (char * filename, int flags)
       {
       return -1;
       }
-
+    
     int new_file_loc = alloc_free(DEFAULT_FILE_BLOCKS);
     if (new_file_loc == -1)
       {
       return -1;
-      }
-
-    // New directory entry initialization
-    if (fcbArray[returnFd].buf == NULL)
-      {
-      perror("Could not allocate buffer");
-      return EXIT_FAILURE;
       }
 
     // New directory entry initialization

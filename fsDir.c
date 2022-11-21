@@ -482,12 +482,12 @@ fdDir * fs_opendir(const char *pathname)
   strcpy(path, pathname);
 
   DE *dir_array = parsePath(path);
-  printf("Path after parsePath: '%s'\n", path);
 
   char *last_tok = get_last_tok(path);
+  printf("Last Tok: '%s'\n", last_tok);
 
   int found = get_de_index(last_tok, dir_array);
-  printf("Path after get_last_tok: '%s'\n", path);
+  printf("Found index: %d\n", found);
 
   printf("**************\n");
   fdDir *fd_dir = malloc(sizeof(fdDir));
@@ -515,7 +515,7 @@ fdDir * fs_opendir(const char *pathname)
 
 struct fs_diriteminfo *fs_readdir(fdDir *dirp)
   {
-  printf("****** fs_readdir ******\n");
+  // printf("****** fs_readdir ******\n");
 
   if (dirp == NULL)
     {

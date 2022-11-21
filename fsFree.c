@@ -123,7 +123,7 @@ int restore_free(DE *d_entry)
     next = freespace[next];
     }
   printf("Current block to be set to first block of file/directory ");
-  printf("to be restored to free space: %#010x\n", curr*sizeof(int) + 0x0400);
+  printf("to be restored to free space: %#010lx\n", curr*sizeof(int) + 0x0400);
   freespace[curr] = d_entry->loc;
   fs_vcb->freespace_avail += d_entry->num_blocks;
 

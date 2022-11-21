@@ -1,4 +1,8 @@
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include "fsHelpers.h"
+#include "fsLow.h"
 
 int get_num_blocks(int bytes, int block_size)
   {
@@ -118,6 +122,12 @@ char* get_last_tok(const char *pathname)
   char *lasts;
   char *tok = strtok_r(path, "/", &lasts);
   char *ret = malloc(sizeof(char) * 128);
+
+  if (tok == NULL)
+    {
+    strcpy(ret, ".");
+    return ret;
+    }
 
   while (tok != NULL)
     {

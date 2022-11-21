@@ -78,6 +78,7 @@ int cmd_isfile (int argcnt, char *argvec[]);
 int cmd_isdir (int argcnt, char *argvec[]);
 int cmd_opendir (int argcnt, char *argvec[]);
 int cmd_readdir (int argcnt, char *argvec[]);
+int cmd_getcwd (int argcnt, char *argvec[]);
 
 dispatch_t dispatchTable[] = {
 	{"ls", cmd_ls, "Lists the file in a directory"},
@@ -98,7 +99,8 @@ dispatch_t dispatchTable[] = {
 	{"isdir", cmd_isdir, "Test isDir"},
 	{"nums", cmd_nums, "Test number sizes"},
 	{"opendir", cmd_opendir, "Test opendir"},
-	{"readdir", cmd_readdir, "Test readdir"}
+	{"readdir", cmd_readdir, "Test readdir"},
+	{"getcwd", cmd_getcwd, "Test getcwd"}
 };
 
 static int dispatchcount = sizeof (dispatchTable) / sizeof (dispatch_t);
@@ -206,7 +208,6 @@ int cmd_ls (int argcnt, char *argvec[])
 				break;
 			}
 		}
-	
 	
 	if (optind < argcnt)
 		{
@@ -390,7 +391,7 @@ int cmd_mv (int argcnt, char *argvec[])
 			printf("Usage: mv srcfile destfile\n");
 			return (-1);
 		}
-		
+
 	b_move (dest, src);
 #endif
 	return 0;
@@ -519,12 +520,15 @@ int cmd_cp2fs (int argcnt, char *argvec[])
 			return (-1);
 		}
 	
-	
+	printf("******** cp2fs **********");
 	testfs_fd = b_open (dest, O_WRONLY | O_CREAT | O_TRUNC);
 	linux_fd = open (src, O_RDONLY);
 	do 
 		{
 		readcnt = read (linux_fd, buf, BUFFERLEN);
+		printf("readcnt: %d\n", readcnt);
+		buf[readcnt] = '\0';
+		printf("text: %s\n", buf);
 		b_write (testfs_fd, buf, readcnt);
 		} while (readcnt == BUFFERLEN);
 	b_close (testfs_fd);
@@ -972,6 +976,23 @@ int cmd_readdir (int argcnt, char *argvec[])
 		}
 	
 	fs_closedir(fd_dir);
+
+	return 0;
+	}
+
+
+/****************************************************
+*  getcwd commmand (for testing getcwd)
+****************************************************/
+int cmd_getcwd (int argcnt, char *argvec[])
+	{
+	if (argcnt != 1)
+		{
+		printf ("Usage: getcwd\n");
+		return (-1);
+		}
+
+	printf("CWD: '%s'\n", fs_getcwd("hello", 5));
 
 	return 0;
 	}

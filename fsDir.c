@@ -378,6 +378,8 @@ int fs_delete(char *filename)
     }
 
   dir_array[found_index].name[0] = '\0';
+  dir_array[found_index].num_blocks = 0;
+  dir_array[found_index].size = 0;
   dir_array[found_index].attr = 'a';
 
   restore_free(&dir_array[found_index]);

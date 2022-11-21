@@ -1,0 +1,18 @@
+cmd_ls        DONE
+cmd_cp
+cmd_mv
+cmd_md        DONE
+cmd_rm        DONE
+cmd_touch     DONE
+cmd_cat
+cmd_cp2l
+cmd_cp2fs     
+cmd_cd        DONE
+cmd_pwd       DONE
+cmd_history   DONE
+cmd_pp        DONE
+cmd_isfile    DONE
+cmd_isdir     DONE
+cmd_opendir   DONE
+cmd_readdir   DONE
+cmd_getcwd    DONE

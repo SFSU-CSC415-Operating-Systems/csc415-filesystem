@@ -55,6 +55,7 @@ dkms.conf
 /Hexdump/hexdump
 *.txt
 !Milestone*reqs.txt
+!function_test_list.txt
 
 # Shell
 fsshell

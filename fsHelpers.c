@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include "fsHelpers.h"
 #include "fsLow.h"
+#include "b_io.h"
 
 int get_num_blocks(int bytes, int block_size)
   {

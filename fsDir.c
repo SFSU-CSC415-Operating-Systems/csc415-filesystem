@@ -403,7 +403,7 @@ int fs_isFile(char *filename)
   if (dir_array == NULL)
     {
     printf("Invalid path: %s\n", filename);
-    return -1;
+    return 0;
     }
 
   int index_found = get_de_index(get_last_tok(filename), dir_array);
@@ -411,7 +411,7 @@ int fs_isFile(char *filename)
   if (index_found == -1)
     {
     perror("File/directory not found\n");
-    return -1;
+    return 0;
     }
 
   return dir_array[index_found].attr == 'f' ? 1 : 0;
@@ -425,7 +425,7 @@ int fs_isDir(char *pathname)
   if (dir_array == NULL)
     {
     printf("Invalid path: %s\n", pathname);
-    return -1;
+    return 0;
     }
 
   int index_found = get_de_index(get_last_tok(pathname), dir_array);
@@ -433,7 +433,7 @@ int fs_isDir(char *pathname)
   if (index_found == -1)
     {
     perror("File/directory not found\n");
-    return -1;
+    return 0;
     }
 
   return dir_array[index_found].attr == 'd' ? 1 : 0;
@@ -490,6 +490,12 @@ fdDir * fs_opendir(const char *pathname)
 
   int found = get_de_index(last_tok, dir_array);
   printf("Found index: %d\n", found);
+
+  if (found < 0)
+    {
+    printf("fs_opendir: open directory failed: %s not found", last_tok);
+    return NULL;
+    }
 
   printf("**************\n");
   fdDir *fd_dir = malloc(sizeof(fdDir));

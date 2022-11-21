@@ -4,7 +4,7 @@ int init_dir(int parent_loc);
 
 void print_dir(DE* dir_array);
 
-void print_de(DE *dir);
+void print_de(DE *d_entry);
 
 int get_de_index(char *token, DE* dir_array);
 

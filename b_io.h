@@ -26,5 +26,7 @@ int b_close (b_io_fd fd);
 
 int b_move (char *dest, char *src);
 
+int print_fd(b_io_fd fd);
+
 #endif
 

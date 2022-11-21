@@ -28,6 +28,7 @@
 #include "fsLow.h"
 #include "mfs.h"
 #include "fsDir.h"
+#include "b_io.h"
 
 #define PERMISSIONS (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)
 
@@ -520,7 +521,7 @@ int cmd_cp2fs (int argcnt, char *argvec[])
 			return (-1);
 		}
 	
-	printf("******** cp2fs **********\n");
+	printf("\n******** cp2fs **********\n");
 	testfs_fd = b_open (dest, O_WRONLY | O_CREAT | O_TRUNC);
 	linux_fd = open (src, O_RDONLY);
 	do 

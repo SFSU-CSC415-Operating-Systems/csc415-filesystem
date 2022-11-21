@@ -34,7 +34,7 @@ typedef u_int32_t uint32_t;
 
 #define DE_COUNT 64		  			// initial number of d_entries to allocate to a directory
 #define MAX_PATH_LENGTH 1024	// initial path length
-#define DEFAULT_FILE_BLOCKS 128 // initial number of blocks for new files
+#define DEFAULT_FILE_BLOCKS 1 // initial number of blocks for new files
 
 // This is the directory entry structure for the file system
 // This struct is exactly 128 bytes in size

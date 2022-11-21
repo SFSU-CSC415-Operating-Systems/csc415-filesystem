@@ -159,6 +159,8 @@ DE* parsePath(const char *path)
     LBAread(dir_array, num_blocks, dir_array[found].loc);
     }
   
+  free(pathname);
+  pathname = NULL;
   free(tok_array);
   tok_array = NULL;
 

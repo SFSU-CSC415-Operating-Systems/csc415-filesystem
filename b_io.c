@@ -290,6 +290,8 @@ int b_seek (b_io_fd fd, off_t offset, int whence)
     fcbArray[fd].bufOff = total_offset % B_CHUNK_SIZE;
     fcbArray[fd].bufLen = 0;
     }
+
+  fcbArray[fd].fi->accessed = time(NULL);
 	
 	return fcbArray[fd].bufOff; //Change this
 	}
@@ -473,6 +475,9 @@ int b_write (b_io_fd fd, char * buffer, int count)
       }
     }
 
+  time_t cur_time = time(NULL);
+  fcbArray[fd].fi->accessed = cur_time;
+  fcbArray[fd].fi->modified = cur_time;
   bytesDelivered = part1 + part2 + part3;
   fcbArray[fd].fi->size += bytesDelivered;
 
@@ -622,8 +627,71 @@ int b_read (b_io_fd fd, char * buffer, int count)
       }
     }
 
+  fcbArray[fd].fi->accessed = time(NULL);
+
   return part1 + part2 + part3;
 	}
+
+int b_move (char *dest, char *src)
+  {
+
+  DE *src_dir = parsePath(src);
+	char *src_tok = get_last_tok(src);
+	int src_index = get_de_index(src_tok, src_dir);
+
+  if (src_index < 0)
+    {
+    perror("b_move: source file/directory not found");
+    return -1;
+    }
+
+  DE *dest_dir = parsePath(dest);
+	char *dest_tok = get_last_tok(dest);
+	int dest_index = get_de_index(dest_tok, dest_dir);
+
+  if (dest_index > -1)
+    {
+    perror("b_move: file/directory with that name already exists");
+    return -1;
+    }
+
+  dest_index = get_avail_de_idx(dest_dir);
+
+  if (dest_index < 0)
+    {
+    return -1;
+    }
+
+  printf("Before Move:\n  Source:\n    ");
+  print_de(&src_dir[src_index]);
+  printf("  Destination:\n    ");
+  print_de(&dest_dir[dest_index]);
+
+  memcpy(&dest_dir[dest_index], &src_dir[src_index], sizeof(DE));
+  strcpy(dest_dir[dest_index].name, dest_tok);
+  src_dir[src_index].name[0] = '\0';
+  src_dir[src_index].attr = 'a';
+
+  printf("After Move:\n  Source:\n    ");
+  print_de(&src_dir[src_index]);
+  printf("  Destination:\n    ");
+  print_de(&dest_dir[dest_index]);
+
+  write_dir(src_dir);
+  write_dir(dest_dir);
+
+  free(src_dir);
+  src_dir = NULL;
+  free(src_tok);
+  src_tok = NULL;
+
+  free(dest_dir);
+  dest_dir = NULL;
+  free(dest_tok);
+  dest_tok = NULL;
+
+  return 0;
+  }
 	
 // Interface to Close the file	
 int b_close (b_io_fd fd)

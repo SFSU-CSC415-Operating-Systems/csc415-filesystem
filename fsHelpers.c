@@ -31,6 +31,22 @@ void write_all_fs(DE *dir_array)
     }
   }
 
+void write_dir(DE *dir_array)
+  {
+  // write changes to directory to disk
+	if (LBAwrite(dir_array, dir_array[0].num_blocks, dir_array[0].loc) != dir_array[0].num_blocks)
+		{
+		perror("LBAwrite failed when trying to write the directory\n");
+		}
+
+  // if the current directory is where the directory was created
+  // update the current directory
+  if (dir_array[0].loc == cw_dir_array[0].loc)
+    {
+    memcpy(cw_dir_array, dir_array, dir_array[0].size);
+    }
+  }
+
 
 // sets the current working path
 char* set_cw_path()

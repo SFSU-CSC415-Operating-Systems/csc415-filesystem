@@ -37,17 +37,17 @@
 #define DIRMAX_LEN		4096
 
 /****   SET THESE TO 1 WHEN READY TO TEST THAT COMMAND ****/
-#define CMDLS_ON	0
-#define CMDCP_ON	0
-#define CMDMV_ON	0
+#define CMDLS_ON	1
+#define CMDCP_ON	1
+#define CMDMV_ON	1
 #define CMDMD_ON	1
 #define CMDRM_ON	1
-#define CMDCP2L_ON	0
-#define CMDCP2FS_ON	0
+#define CMDCP2L_ON	1
+#define CMDCP2FS_ON	1
 #define CMDCD_ON	1
 #define CMDPWD_ON	1
-#define CMDTOUCH_ON	0
-#define CMDCAT_ON	0
+#define CMDTOUCH_ON	1
+#define CMDCAT_ON	1
 #define CMDPP_ON 1
 
 
@@ -375,9 +375,23 @@ int cmd_cp (int argcnt, char *argvec[])
 ****************************************************/
 int cmd_mv (int argcnt, char *argvec[])
 	{
-#if (CMDMV_ON == 1)				
-	return -99;
-	// **** TODO ****  For you to implement	
+#if (CMDMV_ON == 1)
+	char * src;
+	char * dest;
+	
+	switch (argcnt)
+		{
+		case 3:
+			src = argvec[1];
+			dest = argvec[2];
+			break;
+		
+		default:
+			printf("Usage: mv srcfile destfile\n");
+			return (-1);
+		}
+		
+	b_move (dest, src);
 #endif
 	return 0;
 	}

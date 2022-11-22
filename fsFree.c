@@ -144,6 +144,23 @@ int load_free()
   return blocks_read;
   }
 
+long get_block(long loc, int offset)
+  {
+  long curr = loc;
+  long next = freespace[curr];
+  for (int i = 0; i < offset; i++)
+    {
+    curr = next;
+    next = freespace[next];
+    }
+  return curr;
+  }
+
+long get_next_block(long loc)
+  {
+  return freespace[loc];
+  }
+
 void print_free()
   {
   printf("=================== Printing Freespace Map ===================\n");

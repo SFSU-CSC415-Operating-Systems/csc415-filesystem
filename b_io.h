@@ -28,5 +28,7 @@ int b_move (char *dest, char *src);
 
 int print_fd(b_io_fd fd);
 
+int alloc_nextblocks(b_io_fd fd, int extra_blocks);
+
 #endif
 

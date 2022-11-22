@@ -144,7 +144,7 @@ int load_free()
   return blocks_read;
   }
 
-long get_block(long loc, int offset)
+int get_block(long loc, int offset)
   {
   long curr = loc;
   long next = freespace[curr];
@@ -156,7 +156,7 @@ long get_block(long loc, int offset)
   return curr;
   }
 
-long get_next_block(long loc)
+int get_next_block(long loc)
   {
   return freespace[loc];
   }

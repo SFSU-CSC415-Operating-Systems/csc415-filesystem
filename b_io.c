@@ -464,7 +464,7 @@ int b_write (b_io_fd fd, char * buffer, int count)
       blocksWritten = LBAwrite(fcbArray[fd].buf, 1, fcbArray[fd].curBlock);
       printf("CURRENTBLOCK: %#010x    ", fcbArray[fd].curBlock * 4 + 0x0400);
       fcbArray[fd].curBlock = get_next_block(fcbArray[fd].curBlock);
-      printf("GETNEXTBLOCK: %#010x\n", fcbArray[fd].curBlock * 4 + 0x0400);
+      printf("NEWCURRENTBLOCK: %#010x\n", fcbArray[fd].curBlock * 4 + 0x0400);
       fcbArray[fd].bufOff = 0;
       }
     }
@@ -508,7 +508,7 @@ int b_write (b_io_fd fd, char * buffer, int count)
 
   printf("bytes delivered: %d\n\n", bytesDelivered);
 
-  memcpy(&fcbArray[fd].dir_array[fcbArray[fd].fileIndex], fcbArray[fd].fi, sizeof(DE));
+  // memcpy(&fcbArray[fd].dir_array[fcbArray[fd].fileIndex], fcbArray[fd].fi, sizeof(DE));
 
   write_dir(fcbArray[fd].dir_array);
 
@@ -744,6 +744,8 @@ int b_close (b_io_fd fd)
 	{
   if (!(fcbArray[fd].accessMode & O_RDONLY) && fcbArray[fd].bufOff > 0)
     LBAwrite(fcbArray[fd].buf, 1, fcbArray[fd].curBlock);
+    
+  memcpy(&fcbArray[fd].dir_array[fcbArray[fd].fileIndex], fcbArray[fd].fi, sizeof(DE));
 
   write_all_fs(fcbArray[fd].dir_array);
   

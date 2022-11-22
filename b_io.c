@@ -481,15 +481,16 @@ int b_write (b_io_fd fd, char * buffer, int count)
   // LBAread remaining block into the fcb buffer, and reset buffer offset
   if (part3 > 0)
     {
-    // copy the buffer into the file buffer
-    memcpy(fcbArray[fd].buf, buffer + part1 + part2, part3);
+    printf("BUFFER OFFSET: %d\n", fcbArray[fd].bufOff);
     char newbuf2[part3 + 1];
-    memcpy(newbuf2, fcbArray[fd].buf, part3);
+    memcpy(newbuf2, buffer + part1 + part2, part3);
     newbuf2[part3] = '\0';
     printf("\nPART3 BUFFER:\n%s\n\n", newbuf2);
+    // copy the buffer into the file buffer
+    memcpy(fcbArray[fd].buf, buffer + part1 + part2, part3);
     // fcbArray[fd].bufOff += part3;
     blocksWritten = LBAwrite(fcbArray[fd].buf, 1, fcbArray[fd].curBlock);
-    fcbArray[fd].bufOff = 0;
+    fcbArray[fd].bufOff = part3;
     }
 
   // if (fcbArray[fd].bufOff >= B_CHUNK_SIZE)

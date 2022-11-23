@@ -626,10 +626,10 @@ int b_read (b_io_fd fd, char * buffer, int count)
   if (part1 > 0)
     {
     memcpy(buffer, fcbArray[fd].buf + fcbArray[fd].bufOff, part1);
-    char pbuf[part1 + 1];
-    memcpy(pbuf, fcbArray[fd].buf + fcbArray[fd].bufOff, part1);
-    pbuf[part1] = '\0';
-    printf("PART1 BUFFER:\n%s\n", pbuf);
+    char p1buf[part1 + 1];
+    memcpy(p1buf, fcbArray[fd].buf + fcbArray[fd].bufOff, part1);
+    p1buf[part1] = '\0';
+    printf("PART1 BUFFER:\n%s\n", p1buf);
 
     fcbArray[fd].bufOff += part1;
     }
@@ -637,7 +637,8 @@ int b_read (b_io_fd fd, char * buffer, int count)
   // LBAread all the complete blocks into the buffer
   if (part2 > 0)
     {
-    blocksRead = LBAread(buffer + part1, numBlocksToCopy, fcbArray[fd].curBlock) * fs_vcb->block_size;
+    blocksRead = LBAread(buffer + part1, numBlocksToCopy, fcbArray[fd].curBlock);
+    fcbArray[fd].curBlock = get_block(fcbArray[fd].curBlock, numBlocksToCopy);
     fcbArray[fd].blockIndex += numBlocksToCopy;
     part2 = blocksRead * B_CHUNK_SIZE;
     }
@@ -656,15 +657,20 @@ int b_read (b_io_fd fd, char * buffer, int count)
 
     // if the blocksRead is less than what is left in the calculated amount,
     // reset part3 to the smaller amount
-    if (fcbArray[fd].bufLen < part3)
-      {
-      part3 = fcbArray[fd].bufLen;
-      }
+    // if (fcbArray[fd].bufLen < part3)
+    //   {
+    //   part3 = fcbArray[fd].bufLen;
+    //   }
     
     // if the number of bytes is more than zero, copy the fd buffer to the
     // buffer and set the offset to the position after the data amount.
     if (part3 > 0)
       {
+      char p3buf[part3 + 1];
+      memcpy(p3buf, fcbArray[fd].buf + fcbArray[fd].bufOff, part3);
+      p3buf[part3] = '\0';
+      printf("PART3 BUFFER:\n%s\n", p3buf);
+
       memcpy(buffer + part1 + part2, fcbArray[fd].buf + fcbArray[fd].bufOff, part3);
       fcbArray[fd].bufOff += part3;
       }
@@ -751,6 +757,9 @@ int b_close (b_io_fd fd)
 	{
   if (!(fcbArray[fd].accessMode & O_RDONLY) && fcbArray[fd].bufOff > 0)
     LBAwrite(fcbArray[fd].buf, 1, fcbArray[fd].curBlock);
+
+  
+  int freespace_restored = restore_extra_free(fcbArray[fd].fi);
     
   memcpy(&fcbArray[fd].dir_array[fcbArray[fd].fileIndex], fcbArray[fd].fi, sizeof(DE));
 

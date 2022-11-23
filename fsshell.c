@@ -1,9 +1,9 @@
 /**************************************************************
-* Class:  CSC-415-0# - Fall 2022
-* Names: 
-* Student IDs:
-* GitHub Name:
-* Group Name:
+* Class:  CSC-415-02 Fall 2021
+* Names: Mark Kim, Peter Truong, Chengkai Yang, Zeel Diyora
+* Student IDs: 918204214
+* GitHub Name: mkim797
+* Group Name: Diligence
 * Project: Basic File System
 *
 * File: fsShell.c
@@ -34,7 +34,7 @@
 
 #define SINGLE_QUOTE	0x27
 #define DOUBLE_QUOTE	0x22
-#define BUFFERLEN		200
+#define BUFFERLEN			577
 #define DIRMAX_LEN		4096
 
 /****   SET THESE TO 1 WHEN READY TO TEST THAT COMMAND ****/

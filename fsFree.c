@@ -144,6 +144,52 @@ int restore_free(DE *d_entry)
   return d_entry->num_blocks;
   }
 
+int restore_extra_free(DE *d_entry)
+  {
+  printf("***** restore_extra_free *****\n");
+
+  if (d_entry == NULL)
+    {
+    perror("restore_free: Free space restore failed: d_entry can't be NULL");
+    return -1;
+    }
+
+  int new_num_blocks = d_entry->size / fs_vcb->block_size + 1;
+  int num_blocks_to_restore = d_entry->num_blocks - new_num_blocks;
+  if (num_blocks_to_restore < 4)
+    {
+    return -1;
+    }
+
+  d_entry->num_blocks = new_num_blocks;
+
+  int file_last_block = get_block(d_entry->loc, d_entry->num_blocks);
+
+  int curr = fs_vcb->freespace_first;
+  printf("First freespace block: %d\n", curr);
+  int next = freespace[fs_vcb->freespace_first];
+  for (int i = 0; i < fs_vcb->freespace_avail - 1; i++)
+    {
+    if (curr == 0xFFFFFFFE)
+      {
+      perror("Freespace end flag encountered prematurely\n");
+      return -1;
+      }
+    curr = next;
+    next = freespace[next];
+    }
+
+  printf("Current block to be set to first block of empty space of file/directory ");
+  printf("to be restored to free space: %#010lx\n", curr*sizeof(int) + 0x0400);
+  freespace[curr] = freespace[file_last_block];
+
+  freespace[file_last_block] = 0xFFFFFFFE;
+
+  fs_vcb->freespace_avail += num_blocks_to_restore;
+
+  return num_blocks_to_restore;
+  }
+
 int load_free()
   {
   printf("\n***** load_free *****\n");

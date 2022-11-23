@@ -27,7 +27,6 @@
 #include "fsFree.h"
 
 #define MAXFCBS 20
-#define B_CHUNK_SIZE 512
 
 typedef struct b_fcb
 	{
@@ -41,6 +40,7 @@ typedef struct b_fcb
   int fileIndex;  // index of file in dir_array
   // int numBlocks;  // number of blocks
   int accessMode; // file access mode
+  int debugFlag;  // debugFlag to stop writing/reading
 	} b_fcb;
 	
 b_fcb fcbArray[MAXFCBS];
@@ -147,7 +147,7 @@ b_io_fd b_open (char * filename, int flags)
     //   }
     }
 
-	char *buf = malloc(B_CHUNK_SIZE);
+	char *buf = malloc(fs_vcb->block_size);
 
 	if (buf == NULL)
 		{
@@ -226,6 +226,9 @@ b_io_fd b_open (char * filename, int flags)
 
     // copy new directory entry to fcbArray file info
     memcpy(fcbArray[returnFd].fi, &dir_array[new_file_index], sizeof(DE));
+
+    print_de(fcbArray[returnFd].fi);
+
     fcbArray[returnFd].fileIndex = new_file_index;
     }
 
@@ -260,7 +263,7 @@ int b_seek (b_io_fd fd, off_t offset, int whence)
 		return (-1); 					//invalid file descriptor
 		}
 
-  int block_offset = offset / B_CHUNK_SIZE;
+  int block_offset = offset / fs_vcb->block_size;
   if (whence & SEEK_SET)
     {
     fcbArray[fd].curBlock = get_block(fcbArray[fd].fi->loc, block_offset);
@@ -274,7 +277,7 @@ int b_seek (b_io_fd fd, off_t offset, int whence)
     fcbArray[fd].curBlock = get_block(fcbArray[fd].fi->loc, fcbArray[fd].fi->num_blocks);
     }
 
-  fcbArray[fd].bufOff = offset % B_CHUNK_SIZE;
+  fcbArray[fd].bufOff = offset % fs_vcb->block_size;
   fcbArray[fd].bufLen = 0;
   fcbArray[fd].fi->accessed = time(NULL);
 	
@@ -285,7 +288,12 @@ int b_seek (b_io_fd fd, off_t offset, int whence)
 // Based entirely off of b_read as provided by Prof Bierman code in class
 int b_write (b_io_fd fd, char * buffer, int count)
 	{
-  printf("****** b_write *******\n");
+  // if (fcbArray[fd].debugFlag)
+  //   {
+  //   return fcbArray[fd].debugFlag;  // stop writes once this flag is set
+  //   }
+
+  printf("************************ b_write ************************\n");
   printf("FIRSTBLOCK: %#010lx   CURRENTBLOCK: %#010x\n", 
     fcbArray[fd].fi->loc * 4 + 0x0400, fcbArray[fd].curBlock * 4 + 0x0400);
 	if (startup == 0) b_init();  //Initialize our system
@@ -320,12 +328,12 @@ int b_write (b_io_fd fd, char * buffer, int count)
   // print_fd(fd);
 
   int extra_blocks = get_num_blocks(
-    fcbArray[fd].fi->size + count + B_CHUNK_SIZE - (fcbArray[fd].fi->num_blocks * fs_vcb->block_size),
+    fcbArray[fd].fi->size + count + fs_vcb->block_size - (fcbArray[fd].fi->num_blocks * fs_vcb->block_size),
     fs_vcb->block_size);
 
 	if (extra_blocks > 0)
 		{
-    printf("Extra blocks needed: %d\n", extra_blocks);
+    printf("****************** Extra blocks needed: %d ******************\n", extra_blocks);
     // set the number of newly allocated blocks to the larger of (extra_blocks * 2)
     // or (fcbArray[fd].fi->num_blocks * 2)
 		extra_blocks = fcbArray[fd].fi->num_blocks > extra_blocks
@@ -338,7 +346,7 @@ int b_write (b_io_fd fd, char * buffer, int count)
 
     if (new_blocks_loc < 0)
       {
-      perror("b_write: freespace allocation failed\n");
+      perror("b_write: freespace allocation failed\n\n");
       return -1;
       }
 
@@ -348,7 +356,7 @@ int b_write (b_io_fd fd, char * buffer, int count)
     // freespace[fcbArray[fd].fi->loc + fcbArray[fd].fi->num_blocks - 1]);
     printf("NEXT BLOCK: %#010x\n", get_block(fcbArray[fd].fi->loc, fcbArray[fd].fi->num_blocks - 1));
     freespace[get_block(fcbArray[fd].fi->loc, fcbArray[fd].fi->num_blocks - 1)] = new_blocks_loc;
-    printf("NEXT BLOCK: %#010x\n", get_block(fcbArray[fd].fi->loc, fcbArray[fd].fi->num_blocks - 1));
+    printf("NEXT BLOCK: %#010x\n\n", get_block(fcbArray[fd].fi->loc, fcbArray[fd].fi->num_blocks - 1));
     fcbArray[fd].fi->num_blocks += extra_blocks;
 		}
 
@@ -358,12 +366,12 @@ int b_write (b_io_fd fd, char * buffer, int count)
   if (fcbArray[fd].fi->size < 1)
     {
     fcbArray[fd].fi->size = 0;
-    availBytesInBuf = B_CHUNK_SIZE;
+    availBytesInBuf = fs_vcb->block_size;
     }
   else
     {
     // available bytes in buffer
-    availBytesInBuf = B_CHUNK_SIZE - fcbArray[fd].bufOff;
+    availBytesInBuf = fs_vcb->block_size - fcbArray[fd].bufOff;
     }
 
   printf("\nWrite count: %d\n", count);
@@ -395,7 +403,7 @@ int b_write (b_io_fd fd, char * buffer, int count)
     // divide the part3 section by the chunk size to get the total number of
     // complete blocks to copy and multiply by the chunk size to get the bytes
     // that those blocks occupy
-    numBlocksToCopy = part3 / B_CHUNK_SIZE;
+    numBlocksToCopy = part3 / fs_vcb->block_size;
     // printf("  numBlocksToCopy: %d\n", numBlocksToCopy);
 
     part2 = numBlocksToCopy * fs_vcb->block_size;
@@ -406,11 +414,12 @@ int b_write (b_io_fd fd, char * buffer, int count)
     part3 = part3 - part2;
     }
 
-  printf("  part1: %d,    part2: %d,    part3: %d\n", part1, part2, part3);
+  printf("  part1: %d,    part2: %d,    part3: %d\n\n", part1, part2, part3);
 
   // memcopy part1 section
   if (part1 > 0)
     {
+    printf("PART1 BUFFER OFFSET: %d\n", fcbArray[fd].bufOff);
     char newbuf[part1 + 1];
     memcpy(newbuf, buffer, part1);
     newbuf[part1] = '\0';
@@ -420,7 +429,7 @@ int b_write (b_io_fd fd, char * buffer, int count)
     printf("*********** BUF OFFSET : %d\n", fcbArray[fd].bufOff);
     blocksWritten = LBAwrite(fcbArray[fd].buf, 1, fcbArray[fd].curBlock);
 
-    if (fcbArray[fd].bufOff >= B_CHUNK_SIZE)
+    if (fcbArray[fd].bufOff >= fs_vcb->block_size)
       {
       // blocksWritten = LBAwrite(fcbArray[fd].buf, 1, fcbArray[fd].curBlock);
       // printf("CURRENTBLOCK: %#010x    ", fcbArray[fd].curBlock * 4 + 0x0400);
@@ -433,8 +442,19 @@ int b_write (b_io_fd fd, char * buffer, int count)
   // LBAread all the complete blocks into the buffer
   if (part2 > 0)
     {
-    blocksWritten = LBAwrite(buffer + part1, numBlocksToCopy, fcbArray[fd].curBlock);
-    fcbArray[fd].curBlock = get_block(fcbArray[fd].curBlock, numBlocksToCopy);
+    printf("PART2 BUFFER OFFSET: %d\n", fcbArray[fd].bufOff);
+    char newbuf2[fs_vcb->block_size + 1];
+    blocksWritten = 0;
+    int i;
+    for (i = 0; i < numBlocksToCopy; i++)
+      {
+      blocksWritten += LBAwrite(buffer + part1 + (i * fs_vcb->block_size), 1, fcbArray[fd].curBlock);
+      fcbArray[fd].curBlock = get_next_block(fcbArray[fd].curBlock);
+
+      memcpy(newbuf2, buffer + part1 + (i * fs_vcb->block_size), fs_vcb->block_size);
+      newbuf2[fs_vcb->block_size] = '\0';
+      printf("\nPART2 BUFFER INDEX %d:\n%s\n\n", i, newbuf2);
+      }
     part2 = blocksWritten * fs_vcb->block_size;
     }
 
@@ -442,7 +462,7 @@ int b_write (b_io_fd fd, char * buffer, int count)
   // LBAread remaining block into the fcb buffer, and reset buffer offset
   if (part3 > 0)
     {
-    printf("BUFFER OFFSET: %d\n", fcbArray[fd].bufOff);
+    printf("PART3 BUFFER OFFSET: %d\n", fcbArray[fd].bufOff);
     char newbuf2[part3 + 1];
     memcpy(newbuf2, buffer + part1 + part2, part3);
     newbuf2[part3] = '\0';
@@ -452,9 +472,11 @@ int b_write (b_io_fd fd, char * buffer, int count)
     // fcbArray[fd].bufOff += part3;
     blocksWritten = LBAwrite(fcbArray[fd].buf, 1, fcbArray[fd].curBlock);
     fcbArray[fd].bufOff += part3;
+
+    // fcbArray[fd].debugFlag = -7919;
     }
 
-  if (fcbArray[fd].bufOff >= B_CHUNK_SIZE)
+  if (fcbArray[fd].bufOff >= fs_vcb->block_size)
     {
     // blocksWritten = LBAwrite(fcbArray[fd].buf, 1, fcbArray[fd].curBlock);
     fcbArray[fd].curBlock = get_next_block(fcbArray[fd].curBlock);
@@ -469,7 +491,7 @@ int b_write (b_io_fd fd, char * buffer, int count)
 
   printf("bytes delivered: %d\n\n", bytesDelivered);
 
-  // memcpy(&fcbArray[fd].dir_array[fcbArray[fd].fileIndex], fcbArray[fd].fi, sizeof(DE));
+  memcpy(&fcbArray[fd].dir_array[fcbArray[fd].fileIndex], fcbArray[fd].fi, sizeof(DE));
 
   write_dir(fcbArray[fd].dir_array);
 
@@ -525,6 +547,13 @@ int b_read (b_io_fd fd, char * buffer, int count)
 		return -1;
 		}
 
+  int totalBytesRead = fcbArray[fd].blockIndex * fs_vcb->block_size + fcbArray[fd].bufOff + 1;
+
+  if (totalBytesRead >= fcbArray[fd].fi->size)
+    {
+    return -1;
+    }
+
   print_fd(fd);
 
 	// available bytes in buffer
@@ -532,7 +561,7 @@ int b_read (b_io_fd fd, char * buffer, int count)
   // printf("Available bytes in buffer: %d\n", availBytesInBuf);
 
 	// number of bytes already delivered
-	int bytesDelivered = (fcbArray[fd].blockIndex * B_CHUNK_SIZE) - availBytesInBuf;
+	int bytesDelivered = (fcbArray[fd].blockIndex * fs_vcb->block_size) - availBytesInBuf;
   printf("Bytes Delivered: %d\n", bytesDelivered);
 
 	// limit count to file length
@@ -573,7 +602,7 @@ int b_read (b_io_fd fd, char * buffer, int count)
     // divide the part3 section by the chunk size to get the total number of
     // complete blocks to copy and multiply by the chunk size to get the bytes
     // that those blocks occupy
-    numBlocksToCopy = part3 / B_CHUNK_SIZE;
+    numBlocksToCopy = part3 / fs_vcb->block_size;
     part2 = numBlocksToCopy * fs_vcb->block_size;
 
     // finally subtract the complete bytes in part2 from the total bytes left to
@@ -597,19 +626,35 @@ int b_read (b_io_fd fd, char * buffer, int count)
   // LBAread all the complete blocks into the buffer
   if (part2 > 0)
     {
-    blocksRead = LBAread(buffer + part1, numBlocksToCopy, fcbArray[fd].curBlock);
-    fcbArray[fd].curBlock = get_block(fcbArray[fd].curBlock, numBlocksToCopy);
-    fcbArray[fd].blockIndex += numBlocksToCopy;
-    part2 = blocksRead * B_CHUNK_SIZE;
+    printf("PART2 BUFFER OFFSET: %d\n", fcbArray[fd].bufOff);
+    char newbuf2[fs_vcb->block_size + 1];
+    blocksRead = 0;
+    int i;
+    for (i = 0; i < numBlocksToCopy; i++)
+      {
+      blocksRead += LBAread(buffer + part1 + (i * fs_vcb->block_size), 1, fcbArray[fd].curBlock);
+      fcbArray[fd].curBlock = get_next_block(fcbArray[fd].curBlock);
+
+      memcpy(newbuf2, buffer + part1 + (i * fs_vcb->block_size), fs_vcb->block_size);
+      newbuf2[fs_vcb->block_size] = '\0';
+      printf("\nPART2 BUFFER INDEX %d:\n%s\n\n", i, newbuf2);
+      }
+    fcbArray[fd].blockIndex += blocksRead;
+    part2 = blocksRead * fs_vcb->block_size;
+
+    // blocksRead = LBAread(buffer + part1, numBlocksToCopy, fcbArray[fd].curBlock);
+    // fcbArray[fd].curBlock = get_block(fcbArray[fd].curBlock, numBlocksToCopy);
+    // fcbArray[fd].blockIndex += numBlocksToCopy;
+    // part2 = blocksRead * fs_vcb->block_size;
     }
 
   // LBAread remaining block into the fcb buffer, and reset buffer offset
   if (part3 > 0)
     {
     blocksRead = LBAread(fcbArray[fd].buf, 1, fcbArray[fd].curBlock);
-    fcbArray[fd].bufLen = B_CHUNK_SIZE;
-    // fcbArray[fd].bufLen = fcbArray[fd].fi->size < (fcbArray[fd].blockIndex + 1) * B_CHUNK_SIZE
-    //   ? fcbArray[fd].fi->size % B_CHUNK_SIZE : B_CHUNK_SIZE;
+    fcbArray[fd].bufLen = fs_vcb->block_size;
+    // fcbArray[fd].bufLen = fcbArray[fd].fi->size < (fcbArray[fd].blockIndex + 1) * fs_vcb->block_size
+    //   ? fcbArray[fd].fi->size % fs_vcb->block_size : fs_vcb->block_size;
 
     fcbArray[fd].curBlock = get_next_block(fcbArray[fd].curBlock);
     fcbArray[fd].blockIndex += 1;
@@ -719,10 +764,15 @@ int b_close (b_io_fd fd)
     LBAwrite(fcbArray[fd].buf, 1, fcbArray[fd].curBlock);
 
   int freespace_restored = restore_extra_free(fcbArray[fd].fi);
+
+  print_de(fcbArray[fd].fi);
     
   memcpy(&fcbArray[fd].dir_array[fcbArray[fd].fileIndex], fcbArray[fd].fi, sizeof(DE));
 
   write_all_fs(fcbArray[fd].dir_array);
+
+  print_dir(fcbArray[fd].dir_array);
+  print_de(fcbArray[fd].fi);
   
   free(fcbArray[fd].dir_array);
   fcbArray[fd].dir_array = NULL;

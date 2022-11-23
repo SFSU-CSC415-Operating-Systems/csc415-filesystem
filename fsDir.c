@@ -212,7 +212,7 @@ int fs_setcwd(char *pathname)
 
   int found = get_de_index(last_tok, dir_array);
 
-  if (found == -1)
+  if (found == -1 || dir_array[found].attr != 'd')
     {
     printf("fs_setcwd: cannot change directory to '%s': No such file or directory\n", pathname);
     return -1;

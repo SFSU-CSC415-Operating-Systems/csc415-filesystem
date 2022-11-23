@@ -154,16 +154,17 @@ int restore_extra_free(DE *d_entry)
     return -1;
     }
 
-  int new_num_blocks = d_entry->size / fs_vcb->block_size + 1;
+  // int new_num_blocks = d_entry->size / fs_vcb->block_size + 1;
+  int new_num_blocks = get_num_blocks(d_entry->size, fs_vcb->block_size) + 4;
   int num_blocks_to_restore = d_entry->num_blocks - new_num_blocks;
-  if (num_blocks_to_restore < 4)
+  if (num_blocks_to_restore <= 0)
     {
     return -1;
     }
 
   d_entry->num_blocks = new_num_blocks;
 
-  int file_last_block = get_block(d_entry->loc, d_entry->num_blocks);
+  int file_last_block = get_block(d_entry->loc, d_entry->num_blocks - 1);
 
   int curr = fs_vcb->freespace_first;
   printf("First freespace block: %d\n", curr);

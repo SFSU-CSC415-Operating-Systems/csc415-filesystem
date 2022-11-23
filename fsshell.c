@@ -35,7 +35,7 @@
 
 #define SINGLE_QUOTE	0x27
 #define DOUBLE_QUOTE	0x22
-#define BUFFERLEN			512
+#define BUFFERLEN			5179
 #define DIRMAX_LEN		4096
 
 /****   SET THESE TO 1 WHEN READY TO TEST THAT COMMAND ****/
@@ -342,7 +342,9 @@ int cmd_cp (int argcnt, char *argvec[])
 	char * src;
 	char * dest;
 	int readcnt;
-	char buf[BUFFERLEN];
+	// initialize a random number between 100 and 10000 inclusive
+	int rnum = (rand() % 9901) + 100;
+	char buf[rnum];
 	
 	switch (argcnt)
 		{
@@ -366,9 +368,9 @@ int cmd_cp (int argcnt, char *argvec[])
 	testfs_dest_fd = b_open (dest, O_WRONLY | O_CREAT | O_TRUNC);
 	do 
 		{
-		readcnt = b_read (testfs_src_fd, buf, BUFFERLEN);
+		readcnt = b_read (testfs_src_fd, buf, rnum);
 		b_write (testfs_dest_fd, buf, readcnt);
-		} while (readcnt == BUFFERLEN);
+		} while (readcnt == rnum);
 	b_close (testfs_src_fd);
 	b_close (testfs_dest_fd);
 #endif
@@ -461,7 +463,9 @@ int cmd_cp2l (int argcnt, char *argvec[])
 	char * src;
 	char * dest;
 	int readcnt;
-	char buf[BUFFERLEN];
+	// initialize a random number between 100 and 10000 inclusive
+	int rnum = (rand() % 9901) + 100;
+	char buf[rnum];
 	
 	switch (argcnt)
 		{
@@ -485,9 +489,9 @@ int cmd_cp2l (int argcnt, char *argvec[])
 	linux_fd = open (dest, O_WRONLY | O_CREAT | O_TRUNC, PERMISSIONS);
 	do 
 		{
-		readcnt = b_read (testfs_fd, buf, BUFFERLEN);
+		readcnt = b_read (testfs_fd, buf, rnum);
 		write (linux_fd, buf, readcnt);
-		} while (readcnt == BUFFERLEN);
+		} while (readcnt == rnum);
 	b_close (testfs_fd);
 	close (linux_fd);
 #endif
@@ -505,7 +509,9 @@ int cmd_cp2fs (int argcnt, char *argvec[])
 	char * src;
 	char * dest;
 	int readcnt;
-	char buf[BUFFERLEN];
+	// initialize a random number between 100 and 10000 inclusive
+	int rnum = (rand() % 9901) + 100;
+	char buf[rnum];
 	
 	switch (argcnt)
 		{
@@ -529,12 +535,13 @@ int cmd_cp2fs (int argcnt, char *argvec[])
 	linux_fd = open (src, O_RDONLY);
 	do 
 		{
-		readcnt = read (linux_fd, buf, BUFFERLEN);
-		printf("readcnt: %d\n", readcnt);
+		readcnt = read (linux_fd, buf, rnum);
+		printf("\nREADCNT: %d\n", readcnt);
 		buf[readcnt] = '\0';
-		printf("text: %s\n", buf);
-		b_write (testfs_fd, buf, readcnt);
-		} while (readcnt == BUFFERLEN);
+		printf("TEXT READ IN:\n%s\n\n", buf);
+		int error = b_write (testfs_fd, buf, readcnt);
+		// if (error == -7919) break;
+		} while (readcnt == rnum);
 	b_close (testfs_fd);
 	close (linux_fd);
 #endif
@@ -739,92 +746,6 @@ void processcommand (char * cmd)
 	}
 
 
-
-int main (int argc, char * argv[])
-	{
-	char * cmdin;
-	char * cmd;
-	HIST_ENTRY *he;
-	char * filename;
-	uint64_t volumeSize;
-	uint64_t blockSize;
-    int retVal;
-    
-	if (argc > 3)
-		{
-		filename = argv[1];
-		volumeSize = atoll (argv[2]);
-		blockSize = atoll (argv[3]);
-		}
-	else
-		{
-		printf ("Usage: fsLowDriver volumeFileName volumeSize blockSize\n");
-		return -1;
-		}
-		
-	retVal = startPartitionSystem (filename, &volumeSize, &blockSize);	
-	printf("Opened %s, Volume Size: %llu;  BlockSize: %llu; Return %d\n", filename, (ull_t)volumeSize, (ull_t)blockSize, retVal);
-
-	if (retVal != PART_NOERROR)
-		{
-		printf ("Start Partition Failed:  %d\n", retVal);
-		return (retVal);
-		}
-	
-	retVal = initFileSystem (volumeSize / blockSize, blockSize);
-	
-	if (retVal != 0)
-		{
-		printf ("Initialize File System Failed:  %d\n", retVal);
-		closePartitionSystem();
-		return (retVal);
-		}
-
-	if (argc > 4)
-		if(strcmp("lowtest", argv[4]) == 0)
-			runFSLowTest();
-
-	using_history();
-	stifle_history(200);	//max history entries
-	
-	while (1)
-		{
-		cmdin = readline("Prompt > ");
-#ifdef COMMAND_DEBUG
-		printf ("%s\n", cmdin);
-#endif
-		
-		cmd = malloc (strlen(cmdin) + 30);
-		strcpy (cmd, cmdin);
-		free (cmdin);
-		cmdin = NULL;
-		
-		if (strcmp (cmd, "exit") == 0)
-			{
-			free (cmd);
-			cmd = NULL;
-			exitFileSystem();
-			closePartitionSystem();
-			// exit while loop and terminate shell
-			break;
-			}
-			
-		if ((cmd != NULL) && (strlen(cmd) > 0))
-			{
-			he = history_get(history_length);
-			if (!((he != NULL) && (strcmp(he->line, cmd)==0)))
-				{
-				add_history(cmd);
-				}
-			processcommand (cmd);
-			}
-				
-		free (cmd);
-		cmd = NULL;		
-		} // end while
-	}
-
-
 /****************************************************
 *  PP commmand (for testing parsePath)
 ****************************************************/
@@ -885,7 +806,6 @@ int cmd_nums (int argcnt, char *argvec[])
 	}
 
 
-
 /****************************************************
 *  isFile commmand (for testing isFile)
 ****************************************************/
@@ -908,6 +828,7 @@ int cmd_isfile (int argcnt, char *argvec[])
 
 	return 0;
 	}
+
 
 /****************************************************
 *  isDir commmand (for testing isDir)
@@ -1020,4 +941,90 @@ int cmd_getde (int argcnt, char *argvec[])
 	print_de(&dir_array[fd]);
 
 	return 0;
+	}
+
+
+
+int main (int argc, char * argv[])
+	{
+	char * cmdin;
+	char * cmd;
+	HIST_ENTRY *he;
+	char * filename;
+	uint64_t volumeSize;
+	uint64_t blockSize;
+    int retVal;
+    
+	if (argc > 3)
+		{
+		filename = argv[1];
+		volumeSize = atoll (argv[2]);
+		blockSize = atoll (argv[3]);
+		}
+	else
+		{
+		printf ("Usage: fsLowDriver volumeFileName volumeSize blockSize\n");
+		return -1;
+		}
+		
+	retVal = startPartitionSystem (filename, &volumeSize, &blockSize);	
+	printf("Opened %s, Volume Size: %llu;  BlockSize: %llu; Return %d\n", filename, (ull_t)volumeSize, (ull_t)blockSize, retVal);
+
+	if (retVal != PART_NOERROR)
+		{
+		printf ("Start Partition Failed:  %d\n", retVal);
+		return (retVal);
+		}
+	
+	retVal = initFileSystem (volumeSize / blockSize, blockSize);
+	
+	if (retVal != 0)
+		{
+		printf ("Initialize File System Failed:  %d\n", retVal);
+		closePartitionSystem();
+		return (retVal);
+		}
+
+	if (argc > 4)
+		if(strcmp("lowtest", argv[4]) == 0)
+			runFSLowTest();
+
+	using_history();
+	stifle_history(200);	//max history entries
+	
+	while (1)
+		{
+		cmdin = readline("Prompt > ");
+#ifdef COMMAND_DEBUG
+		printf ("%s\n", cmdin);
+#endif
+		
+		cmd = malloc (strlen(cmdin) + 30);
+		strcpy (cmd, cmdin);
+		free (cmdin);
+		cmdin = NULL;
+		
+		if (strcmp (cmd, "exit") == 0)
+			{
+			free (cmd);
+			cmd = NULL;
+			exitFileSystem();
+			closePartitionSystem();
+			// exit while loop and terminate shell
+			break;
+			}
+			
+		if ((cmd != NULL) && (strlen(cmd) > 0))
+			{
+			he = history_get(history_length);
+			if (!((he != NULL) && (strcmp(he->line, cmd)==0)))
+				{
+				add_history(cmd);
+				}
+			processcommand (cmd);
+			}
+				
+		free (cmd);
+		cmd = NULL;		
+		} // end while
 	}

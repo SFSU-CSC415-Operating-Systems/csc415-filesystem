@@ -530,17 +530,13 @@ int cmd_cp2fs (int argcnt, char *argvec[])
 			return (-1);
 		}
 	
-	printf("\n******** cp2fs **********\n");
 	testfs_fd = b_open (dest, O_WRONLY | O_CREAT | O_TRUNC);
 	linux_fd = open (src, O_RDONLY);
 	do 
 		{
 		readcnt = read (linux_fd, buf, rnum);
-		printf("\nREADCNT: %d\n", readcnt);
 		buf[readcnt] = '\0';
-		printf("TEXT READ IN:\n%s\n\n", buf);
 		int error = b_write (testfs_fd, buf, readcnt);
-		// if (error == -7919) break;
 		} while (readcnt == rnum);
 	b_close (testfs_fd);
 	close (linux_fd);

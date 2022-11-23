@@ -25,17 +25,10 @@
 // If parent_loc == 0, this is the root directory
 int init_dir(int parent_loc)
   {
-  printf("***** init_dir *****\n");
-
   int num_blocks = get_num_blocks(sizeof(DE) * DE_COUNT, fs_vcb->block_size);
-  printf("Number of blocks in dir: %d\n", num_blocks);
   int num_bytes = num_blocks * fs_vcb->block_size;
-  printf("Number of bytes in dir: %d\n", num_bytes);
-  printf("Size of DE: %lu\n", sizeof(DE));
   DE* dir_array = malloc(num_bytes);
   int dir_loc = alloc_free(num_blocks);
-  printf("Directory Location: %d\n", dir_loc);
-
   if (dir_loc == -1)
     {
     perror("Allocation of directory failed.\n");
@@ -97,9 +90,6 @@ int init_dir(int parent_loc)
     dir_array[i].attr = 'a';
     }
 
-  // print_de(&dir_array[0]);
-  // print_de(&dir_array[1]);
-
   int blocks_written = LBAwrite(dir_array, num_blocks, dir_loc);
 
   if (blocks_written != num_blocks)
@@ -108,8 +98,6 @@ int init_dir(int parent_loc)
     return -1;
     }
 
-  printf("LBAwrite blocks written: %d\n", blocks_written);
-  
   free(dir_array);
   dir_array = NULL;
 
@@ -125,7 +113,6 @@ int init_dir(int parent_loc)
 // does not exist) or the n-1 directory (array of DE's) pointer
 DE* parsePath(const char *path)
   {
-  printf("***** parsePath *****\n");
   char *pathname = malloc(strlen(path) + 1);
   strcpy(pathname, path);
 
@@ -233,10 +220,8 @@ int fs_setcwd(char *pathname)
 // directory is created, otherwise -1 if mkdir fails.
 int fs_mkdir(const char *pathname, mode_t mode)
   {
-  printf("****** fs_mkdir ******\n");
   char *path = malloc(strlen(pathname) + 1);
   strcpy(path, pathname);
-  printf("Path: %s\n", path);
 
   DE *dir_array = parsePath(path);
 
@@ -247,11 +232,8 @@ int fs_mkdir(const char *pathname, mode_t mode)
     }
 
   char *last_tok = get_last_tok(path);
-  
-  printf("Last Token: '%s'\n", last_tok);
 
   int found = get_de_index(last_tok, dir_array);
-  printf("Found DE index: %d\n", found);
 
   if (found > -1)
     {
@@ -260,14 +242,12 @@ int fs_mkdir(const char *pathname, mode_t mode)
     }
 
   int new_dir_index = get_avail_de_idx(dir_array);
-  printf("New directory index: %d\n", new_dir_index);
   if (new_dir_index == -1)
     {
     return -1;
     }
 
   int new_dir_loc = init_dir(dir_array[0].loc);
-  printf("New directory LBA loc: %d\n", new_dir_loc);
   
   int num_blocks = get_num_blocks(sizeof(DE) * DE_COUNT, fs_vcb->block_size);
   int num_bytes = num_blocks * fs_vcb->block_size;
@@ -283,7 +263,7 @@ int fs_mkdir(const char *pathname, mode_t mode)
   dir_array[new_dir_index].attr = 'd';
   strcpy(dir_array[new_dir_index].name, last_tok);
 
-  print_de(&dir_array[new_dir_index]);
+  // print_de(&dir_array[new_dir_index]);
 
   // write new directory to file system
   write_all_fs(dir_array);
@@ -302,7 +282,6 @@ int fs_mkdir(const char *pathname, mode_t mode)
 
 int fs_rmdir(const char *pathname)
   {
-  printf("****** fs_rmdir ******\n");
   char *path = malloc(strlen(pathname) + 1);
   strcpy(path, pathname);
 
@@ -311,7 +290,6 @@ int fs_rmdir(const char *pathname)
   char *last_tok = get_last_tok(path);
 
   int found_index = get_de_index(last_tok, dir_array);
-  printf("dir '%s' to be removed with index: %d\n", last_tok, found_index);
 
   if (found_index < 2)
     {
@@ -369,7 +347,6 @@ int fs_rmdir(const char *pathname)
 
 int fs_delete(char *filename)
   {
-  printf("****** fs_delete ******\n");
   char *path = malloc(strlen(filename) + 1);
   strcpy(path, filename);
 
@@ -412,7 +389,6 @@ int fs_delete(char *filename)
 
 int fs_isFile(char *filename)
   {
-  printf("****** fs_isFile ******\n");
   DE *dir_array = parsePath(filename);
   if (dir_array == NULL)
     {
@@ -434,7 +410,6 @@ int fs_isFile(char *filename)
 
 int fs_isDir(char *pathname)
   {
-  printf("****** fs_isDir ******\n");
   DE *dir_array = parsePath(pathname);
   if (dir_array == NULL)
     {
@@ -458,7 +433,6 @@ int fs_isDir(char *pathname)
 // otherwise -1 if it fails
 int fs_stat(const char *path, struct fs_stat *buf)
   {
-  printf("****** fs_stat ******\n");
   char *pathname = malloc(strlen(path) + 1);
   strcpy(pathname, path);
 
@@ -493,17 +467,14 @@ int fs_stat(const char *path, struct fs_stat *buf)
 
 fdDir * fs_opendir(const char *pathname)
   {
-  printf("****** fs_opendir ******\n");
   char *path = malloc(strlen(pathname) + 1);
   strcpy(path, pathname);
 
   DE *dir_array = parsePath(path);
 
   char *last_tok = get_last_tok(path);
-  printf("Last Tok: '%s'\n", last_tok);
 
   int found = get_de_index(last_tok, dir_array);
-  printf("Found index: %d\n", found);
 
   if (found < 0)
     {
@@ -511,7 +482,6 @@ fdDir * fs_opendir(const char *pathname)
     return NULL;
     }
 
-  printf("**************\n");
   fdDir *fd_dir = malloc(sizeof(fdDir));
 
   fd_dir->d_reclen = dir_array[found].num_blocks;
@@ -537,8 +507,6 @@ fdDir * fs_opendir(const char *pathname)
 
 struct fs_diriteminfo *fs_readdir(fdDir *dirp)
   {
-  // printf("****** fs_readdir ******\n");
-
   if (dirp == NULL)
     {
     perror("fs_readdir: read directory failed: fdDir is NULL\n");
@@ -609,8 +577,6 @@ int fs_closedir(fdDir *dirp)
 // checks if directory is empty
 int is_empty(DE *d_entry)
   {
-  printf("****** is_empty ******\n");
-
   if (d_entry == NULL)
     {
     perror("is_empty: failed: directory entry is NULL\n");

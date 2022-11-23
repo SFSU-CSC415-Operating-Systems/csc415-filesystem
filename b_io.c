@@ -281,8 +281,6 @@ int b_seek (b_io_fd fd, off_t offset, int whence)
 	return fcbArray[fd].bufOff; //Change this
 	}
 
-
-
 // Interface to write function
 // Based entirely off of b_read as provided by Prof Bierman code in class
 int b_write (b_io_fd fd, char * buffer, int count)
@@ -320,9 +318,6 @@ int b_write (b_io_fd fd, char * buffer, int count)
 
   // print_de(fcbArray[fd].fi);
   // print_fd(fd);
-
-	// check if there is enough space in the final block to contain the buffer
-	// copy
 
   int extra_blocks = get_num_blocks(
     fcbArray[fd].fi->size + count + B_CHUNK_SIZE - (fcbArray[fd].fi->num_blocks * fs_vcb->block_size),
@@ -425,43 +420,8 @@ int b_write (b_io_fd fd, char * buffer, int count)
     printf("*********** BUF OFFSET : %d\n", fcbArray[fd].bufOff);
     blocksWritten = LBAwrite(fcbArray[fd].buf, 1, fcbArray[fd].curBlock);
 
-  
-    // if (part1 + part2 + part3 == part1)
-    //   {
-    //   blocksWritten = LBAwrite(fcbArray[fd].buf, 1, fcbArray[fd].curBlock);
-    //   }
-    // if buffer full, write to disk
     if (fcbArray[fd].bufOff >= B_CHUNK_SIZE)
       {
-      // if (fcbArray[fd].blockIndex == fcbArray[fd].fi->num_blocks - 1)
-      //   {
-      //   printf("Extra blocks needed:\n");
-      //   // set the number of newly allocated blocks to the larger of (extra_blocks * 2)
-      //   // or (fcbArray[fd].fi->num_blocks * 2)
-      //   int extra_blocks = fcbArray[fd].fi->num_blocks > extra_blocks
-      //                 ? fcbArray[fd].fi->num_blocks : extra_blocks;
-      //   printf("Extra blocks to allocate (more than needed): %d\n", extra_blocks);
-
-      //   // allocate the extra blocks and save location
-      //   int new_blocks_loc = alloc_free(extra_blocks);
-      //   printf("Location of allocated blocks: %#010x\n", extra_blocks*4 + 0x0400);
-
-      //   if (new_blocks_loc < 0)
-      //     {
-      //     perror("b_write: freespace allocation failed\n");
-      //     return -1;
-      //     }
-
-      //   // reset final block of file in the freespace map to the starting block of
-      //   // the newly allocated space
-      //   // printf("File Freespace Map next loc: %#010x\n",
-      //   // freespace[fcbArray[fd].fi->loc + fcbArray[fd].fi->num_blocks - 1]);
-      //   printf("NEXT BLOCK: %#010x\n", get_block(fcbArray[fd].fi->loc, fcbArray[fd].fi->num_blocks - 1));
-      //   freespace[get_block(fcbArray[fd].fi->loc, fcbArray[fd].fi->num_blocks - 1)] = new_blocks_loc;
-      //   printf("NEXT BLOCK: %#010x\n", get_block(fcbArray[fd].fi->loc, fcbArray[fd].fi->num_blocks - 1));
-      //   fcbArray[fd].fi->num_blocks += extra_blocks;
-      //   }
-
       // blocksWritten = LBAwrite(fcbArray[fd].buf, 1, fcbArray[fd].curBlock);
       // printf("CURRENTBLOCK: %#010x    ", fcbArray[fd].curBlock * 4 + 0x0400);
       fcbArray[fd].curBlock = get_next_block(fcbArray[fd].curBlock);
@@ -772,42 +732,6 @@ int b_close (b_io_fd fd)
   free(fcbArray[fd].buf);
   fcbArray[fd].buf = NULL;
 	}
-
-// int assess_block_count(b_io_fd fd, int count)
-//   {
-//   int extra_blocks = get_num_blocks(
-//     fcbArray[fd].fi->size + count - (fcbArray[fd].fi->num_blocks * fs_vcb->block_size),
-//     fs_vcb->block_size);
-
-// 	if (extra_blocks > 0)
-// 		{
-//     printf("Extra blocks needed: %d\n", extra_blocks);
-//     // set the number of newly allocated blocks to the larger of (extra_blocks * 2)
-//     // or (fcbArray[fd].fi->num_blocks * 2)
-// 		extra_blocks = fcbArray[fd].fi->num_blocks > extra_blocks
-//                   ? fcbArray[fd].fi->num_blocks : extra_blocks;
-//     printf("Extra blocks to allocate (more than needed): %d\n", extra_blocks);
-
-//     // allocate the extra blocks and save location
-//     int new_blocks_loc = alloc_free(extra_blocks);
-//     printf("Location of allocated blocks: %#010x\n", extra_blocks*4 + 0x0400);
-
-//     if (new_blocks_loc < 0)
-//       {
-//       perror("b_write: freespace allocation failed\n");
-//       return -1;
-//       }
-
-//     // reset final block of file in the freespace map to the starting block of
-//     // the newly allocated space
-//     // printf("File Freespace Map next loc: %#010x\n",
-//     // freespace[fcbArray[fd].fi->loc + fcbArray[fd].fi->num_blocks - 1]);
-//     printf("NEXT BLOCK: %#010x\n", get_block(fcbArray[fd].fi->loc, fcbArray[fd].fi->num_blocks - 1));
-//     freespace[get_block(fcbArray[fd].fi->loc, fcbArray[fd].fi->num_blocks - 1)] = new_blocks_loc;
-//     printf("NEXT BLOCK: %#010x\n", get_block(fcbArray[fd].fi->loc, fcbArray[fd].fi->num_blocks - 1));
-//     fcbArray[fd].fi->num_blocks += extra_blocks;
-// 		}
-//   }
 
 int print_fd(b_io_fd fd)
   {

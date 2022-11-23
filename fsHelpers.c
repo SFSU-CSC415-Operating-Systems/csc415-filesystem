@@ -1,3 +1,17 @@
+/**************************************************************
+* Class:  CSC-415-02 Fall 2021
+* Names: Mark Kim, Peter Truong, Chengkai Yang, Zeel Diyora
+* Student IDs: 918204214
+* GitHub Name: mkim797
+* Group Name: Diligence
+* Project: Basic File System
+*
+* File: b_io.c
+*
+* Description: Basic File System - Key File I/O Operations
+*
+**************************************************************/
+
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>

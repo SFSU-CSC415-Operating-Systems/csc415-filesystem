@@ -325,7 +325,7 @@ int b_write (b_io_fd fd, char * buffer, int count)
 	// copy
 
   int extra_blocks = get_num_blocks(
-    fcbArray[fd].fi->size + count - (fcbArray[fd].fi->num_blocks * fs_vcb->block_size),
+    fcbArray[fd].fi->size + count + B_CHUNK_SIZE - (fcbArray[fd].fi->num_blocks * fs_vcb->block_size),
     fs_vcb->block_size);
 
 	if (extra_blocks > 0)
@@ -423,48 +423,49 @@ int b_write (b_io_fd fd, char * buffer, int count)
     memcpy(fcbArray[fd].buf + fcbArray[fd].bufOff, buffer, part1);
     fcbArray[fd].bufOff += part1;
     printf("*********** BUF OFFSET : %d\n", fcbArray[fd].bufOff);
+    blocksWritten = LBAwrite(fcbArray[fd].buf, 1, fcbArray[fd].curBlock);
 
   
-    if (part1 + part2 + part3 == part1)
-      {
-      blocksWritten = LBAwrite(fcbArray[fd].buf, 1, fcbArray[fd].curBlock);
-      }
+    // if (part1 + part2 + part3 == part1)
+    //   {
+    //   blocksWritten = LBAwrite(fcbArray[fd].buf, 1, fcbArray[fd].curBlock);
+    //   }
     // if buffer full, write to disk
-    else if (fcbArray[fd].bufOff >= B_CHUNK_SIZE)
+    if (fcbArray[fd].bufOff >= B_CHUNK_SIZE)
       {
-      if (fcbArray[fd].blockIndex == fcbArray[fd].fi->num_blocks - 1)
-        {
-        printf("Extra blocks needed:\n");
-        // set the number of newly allocated blocks to the larger of (extra_blocks * 2)
-        // or (fcbArray[fd].fi->num_blocks * 2)
-        int extra_blocks = fcbArray[fd].fi->num_blocks > extra_blocks
-                      ? fcbArray[fd].fi->num_blocks : extra_blocks;
-        printf("Extra blocks to allocate (more than needed): %d\n", extra_blocks);
+      // if (fcbArray[fd].blockIndex == fcbArray[fd].fi->num_blocks - 1)
+      //   {
+      //   printf("Extra blocks needed:\n");
+      //   // set the number of newly allocated blocks to the larger of (extra_blocks * 2)
+      //   // or (fcbArray[fd].fi->num_blocks * 2)
+      //   int extra_blocks = fcbArray[fd].fi->num_blocks > extra_blocks
+      //                 ? fcbArray[fd].fi->num_blocks : extra_blocks;
+      //   printf("Extra blocks to allocate (more than needed): %d\n", extra_blocks);
 
-        // allocate the extra blocks and save location
-        int new_blocks_loc = alloc_free(extra_blocks);
-        printf("Location of allocated blocks: %#010x\n", extra_blocks*4 + 0x0400);
+      //   // allocate the extra blocks and save location
+      //   int new_blocks_loc = alloc_free(extra_blocks);
+      //   printf("Location of allocated blocks: %#010x\n", extra_blocks*4 + 0x0400);
 
-        if (new_blocks_loc < 0)
-          {
-          perror("b_write: freespace allocation failed\n");
-          return -1;
-          }
+      //   if (new_blocks_loc < 0)
+      //     {
+      //     perror("b_write: freespace allocation failed\n");
+      //     return -1;
+      //     }
 
-        // reset final block of file in the freespace map to the starting block of
-        // the newly allocated space
-        // printf("File Freespace Map next loc: %#010x\n",
-        // freespace[fcbArray[fd].fi->loc + fcbArray[fd].fi->num_blocks - 1]);
-        printf("NEXT BLOCK: %#010x\n", get_block(fcbArray[fd].fi->loc, fcbArray[fd].fi->num_blocks - 1));
-        freespace[get_block(fcbArray[fd].fi->loc, fcbArray[fd].fi->num_blocks - 1)] = new_blocks_loc;
-        printf("NEXT BLOCK: %#010x\n", get_block(fcbArray[fd].fi->loc, fcbArray[fd].fi->num_blocks - 1));
-        fcbArray[fd].fi->num_blocks += extra_blocks;
-        }
+      //   // reset final block of file in the freespace map to the starting block of
+      //   // the newly allocated space
+      //   // printf("File Freespace Map next loc: %#010x\n",
+      //   // freespace[fcbArray[fd].fi->loc + fcbArray[fd].fi->num_blocks - 1]);
+      //   printf("NEXT BLOCK: %#010x\n", get_block(fcbArray[fd].fi->loc, fcbArray[fd].fi->num_blocks - 1));
+      //   freespace[get_block(fcbArray[fd].fi->loc, fcbArray[fd].fi->num_blocks - 1)] = new_blocks_loc;
+      //   printf("NEXT BLOCK: %#010x\n", get_block(fcbArray[fd].fi->loc, fcbArray[fd].fi->num_blocks - 1));
+      //   fcbArray[fd].fi->num_blocks += extra_blocks;
+      //   }
 
-      blocksWritten = LBAwrite(fcbArray[fd].buf, 1, fcbArray[fd].curBlock);
-      printf("CURRENTBLOCK: %#010x    ", fcbArray[fd].curBlock * 4 + 0x0400);
+      // blocksWritten = LBAwrite(fcbArray[fd].buf, 1, fcbArray[fd].curBlock);
+      // printf("CURRENTBLOCK: %#010x    ", fcbArray[fd].curBlock * 4 + 0x0400);
       fcbArray[fd].curBlock = get_next_block(fcbArray[fd].curBlock);
-      printf("NEWCURRENTBLOCK: %#010x\n", fcbArray[fd].curBlock * 4 + 0x0400);
+      // printf("NEWCURRENTBLOCK: %#010x\n", fcbArray[fd].curBlock * 4 + 0x0400);
       fcbArray[fd].bufOff = 0;
       }
     }
@@ -487,18 +488,18 @@ int b_write (b_io_fd fd, char * buffer, int count)
     newbuf2[part3] = '\0';
     printf("\nPART3 BUFFER:\n%s\n\n", newbuf2);
     // copy the buffer into the file buffer
-    memcpy(fcbArray[fd].buf, buffer + part1 + part2, part3);
+    memcpy(fcbArray[fd].buf + fcbArray[fd].bufOff, buffer + part1 + part2, part3);
     // fcbArray[fd].bufOff += part3;
     blocksWritten = LBAwrite(fcbArray[fd].buf, 1, fcbArray[fd].curBlock);
-    fcbArray[fd].bufOff = part3;
+    fcbArray[fd].bufOff += part3;
     }
 
-  // if (fcbArray[fd].bufOff >= B_CHUNK_SIZE)
-  //   {
-  //   blocksWritten = LBAwrite(fcbArray[fd].buf, 1, fcbArray[fd].curBlock);
-  //   fcbArray[fd].curBlock = get_next_block(fcbArray[fd].curBlock);
-  //   fcbArray[fd].bufOff = 0;
-  //   }
+  if (fcbArray[fd].bufOff >= B_CHUNK_SIZE)
+    {
+    // blocksWritten = LBAwrite(fcbArray[fd].buf, 1, fcbArray[fd].curBlock);
+    fcbArray[fd].curBlock = get_next_block(fcbArray[fd].curBlock);
+    fcbArray[fd].bufOff = 0;
+    }
 
   time_t cur_time = time(NULL);
   fcbArray[fd].fi->accessed = cur_time;
@@ -568,7 +569,7 @@ int b_read (b_io_fd fd, char * buffer, int count)
 
 	// available bytes in buffer
 	int availBytesInBuf = fcbArray[fd].bufLen - fcbArray[fd].bufOff;
-  printf("Available bytes in buffer: %d\n", availBytesInBuf);
+  // printf("Available bytes in buffer: %d\n", availBytesInBuf);
 
 	// number of bytes already delivered
 	int bytesDelivered = (fcbArray[fd].blockIndex * B_CHUNK_SIZE) - availBytesInBuf;
@@ -625,6 +626,11 @@ int b_read (b_io_fd fd, char * buffer, int count)
   if (part1 > 0)
     {
     memcpy(buffer, fcbArray[fd].buf + fcbArray[fd].bufOff, part1);
+    char pbuf[part1 + 1];
+    memcpy(pbuf, fcbArray[fd].buf + fcbArray[fd].bufOff, part1);
+    pbuf[part1] = '\0';
+    printf("PART1 BUFFER:\n%s\n", pbuf);
+
     fcbArray[fd].bufOff += part1;
     }
 
@@ -640,8 +646,9 @@ int b_read (b_io_fd fd, char * buffer, int count)
   if (part3 > 0)
     {
     blocksRead = LBAread(fcbArray[fd].buf, 1, fcbArray[fd].curBlock);
-    fcbArray[fd].bufLen = fcbArray[fd].fi->size < (fcbArray[fd].blockIndex + 1) * B_CHUNK_SIZE
-      ? fcbArray[fd].fi->size % B_CHUNK_SIZE : B_CHUNK_SIZE;
+    fcbArray[fd].bufLen = B_CHUNK_SIZE;
+    // fcbArray[fd].bufLen = fcbArray[fd].fi->size < (fcbArray[fd].blockIndex + 1) * B_CHUNK_SIZE
+    //   ? fcbArray[fd].fi->size % B_CHUNK_SIZE : B_CHUNK_SIZE;
 
     fcbArray[fd].curBlock = get_next_block(fcbArray[fd].curBlock);
     fcbArray[fd].blockIndex += 1;

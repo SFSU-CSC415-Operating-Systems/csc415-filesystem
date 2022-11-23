@@ -718,7 +718,6 @@ int b_close (b_io_fd fd)
   if (!(fcbArray[fd].accessMode & O_RDONLY) && fcbArray[fd].bufOff > 0)
     LBAwrite(fcbArray[fd].buf, 1, fcbArray[fd].curBlock);
 
-  
   int freespace_restored = restore_extra_free(fcbArray[fd].fi);
     
   memcpy(&fcbArray[fd].dir_array[fcbArray[fd].fileIndex], fcbArray[fd].fi, sizeof(DE));

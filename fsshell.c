@@ -29,12 +29,13 @@
 #include "mfs.h"
 #include "fsDir.h"
 #include "b_io.h"
+#include "fsHelpers.h"
 
 #define PERMISSIONS (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)
 
 #define SINGLE_QUOTE	0x27
 #define DOUBLE_QUOTE	0x22
-#define BUFFERLEN			577
+#define BUFFERLEN			512
 #define DIRMAX_LEN		4096
 
 /****   SET THESE TO 1 WHEN READY TO TEST THAT COMMAND ****/
@@ -80,6 +81,7 @@ int cmd_isdir (int argcnt, char *argvec[]);
 int cmd_opendir (int argcnt, char *argvec[]);
 int cmd_readdir (int argcnt, char *argvec[]);
 int cmd_getcwd (int argcnt, char *argvec[]);
+int cmd_getde (int argcnt, char *argvec[]);
 
 dispatch_t dispatchTable[] = {
 	{"ls", cmd_ls, "Lists the file in a directory"},
@@ -101,7 +103,8 @@ dispatch_t dispatchTable[] = {
 	{"nums", cmd_nums, "Test number sizes"},
 	{"opendir", cmd_opendir, "Test opendir"},
 	{"readdir", cmd_readdir, "Test readdir"},
-	{"getcwd", cmd_getcwd, "Test getcwd"}
+	{"getcwd", cmd_getcwd, "Test getcwd"},
+	{"getde", cmd_getde, "Test getde"}
 };
 
 static int dispatchcount = sizeof (dispatchTable) / sizeof (dispatch_t);
@@ -994,6 +997,27 @@ int cmd_getcwd (int argcnt, char *argvec[])
 		}
 
 	printf("CWD: '%s'\n", fs_getcwd("hello", 5));
+
+	return 0;
+	}
+
+
+/****************************************************
+*  getde commmand (print de)
+****************************************************/
+int cmd_getde (int argcnt, char *argvec[])
+	{
+	if (argcnt != 2)
+		{
+		printf ("Usage: getcwd path\n");
+		return (-1);
+		}
+
+	DE *dir_array = parsePath(argvec[1]);
+	char *lasttok = get_last_tok(argvec[1]);
+	int fd = get_de_index(lasttok, dir_array);
+
+	print_de(&dir_array[fd]);
 
 	return 0;
 	}

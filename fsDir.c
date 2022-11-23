@@ -725,6 +725,6 @@ void print_de(DE* d_entry)
   printf("=================== Printing Directory Entry ===================\n");
   printf("Size: %#010lx\nLocation: %#010lx\nCreated: %#010lx\nModified: %#010lx\n",
     d_entry->size, d_entry->loc*sizeof(int) + 0x0400, d_entry->created, d_entry->modified);
-  printf("Accessed: %#010lx\nAttribute: %c\nName: %s\n",
-    d_entry->accessed, d_entry->attr, d_entry->name);
+  printf("Accessed: %#010lx\nAttribute: %c\nName: %s\nNumber Of Blocks: %d\n",
+    d_entry->accessed, d_entry->attr, d_entry->name, d_entry->num_blocks);
   }

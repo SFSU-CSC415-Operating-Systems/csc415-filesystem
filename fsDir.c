@@ -456,7 +456,7 @@ int fs_isFile(char *filename)
   // must exist and be a file
   if (index_found < 2 || dir_array[index_found].attr != 'f')
     {
-    perror("File/directory not found\n");
+    // perror("File/directory not found\n");
     return 0;
     }
 
@@ -478,7 +478,7 @@ int fs_isDir(char *pathname)
   // must exist and be a directory
   if (index_found < 0 || dir_array[index_found].attr != 'd')
     {
-    perror("File/directory not found\n");
+    // perror("File/directory not found\n");
     return 0;
     }
 

@@ -61,7 +61,7 @@ dkms.conf
 fsshell
 
 # Created volume
-SampleVolume
+#SampleVolume
 
 # MacOS files
 .DS_Store

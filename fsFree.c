@@ -1,14 +1,14 @@
 /**************************************************************
-* Class:  CSC-415-02 Fall 2021
+* Class:  CSC-415-02 Fall 2022
 * Names: Mark Kim, Peter Truong, Chengkai Yang, Zeel Diyora
-* Student IDs: 918204214
+* Student IDs: 918204214, 915780793, 921572896, 920838201
 * GitHub Name: mkim797
 * Group Name: Diligence
 * Project: Basic File System
 *
-* File: b_io.c
+* File: fsFree.c
 *
-* Description: Basic File System - Key File I/O Operations
+* Description: Free Space Map Operations
 *
 **************************************************************/
 

@@ -1,9 +1,9 @@
 /**************************************************************
-* Class:  CSC-415-0# Fall 2021
-* Names: 
-* Student IDs:
-* GitHub Name:
-* Group Name:
+* Class:  CSC-415-02 Fall 2022
+* Names: Mark Kim, Peter Truong, Chengkai Yang, Zeel Diyora
+* Student IDs: 918204214, 915780793, 921572896, 920838201
+* GitHub Name: mkim797
+* Group Name: Diligence
 * Project: Basic File System
 *
 * File: fsInit.c

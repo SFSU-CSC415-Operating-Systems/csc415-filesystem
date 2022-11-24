@@ -1,12 +1,12 @@
 cmd_ls        DONE
-cmd_cp        DONE WITH SMALL FILE
-cmd_mv        DONE WITH SMALL FILE
+cmd_cp        DONE
+cmd_mv        DONE
 cmd_md        DONE
 cmd_rm        DONE
 cmd_touch     DONE
-cmd_cat       DONE WITH SMALL FILE
-cmd_cp2l      DONE WITH SMALL FILE
-cmd_cp2fs     DONE WITH SMALL FILE    
+cmd_cat       DONE
+cmd_cp2l      DONE
+cmd_cp2fs     DONE
 cmd_cd        DONE
 cmd_pwd       DONE
 cmd_history   DONE

@@ -86,7 +86,10 @@ int alloc_free(int numberOfBlocks)
     printf("Need %d more blocks\n", numberOfBlocks - fs_vcb->freespace_avail);
     return -1;
     }
-
+  
+  // find the last free space block minus the number of blocks we need (minus one
+  // more).  this block is the new final block of the free space; its contents is
+  // the index of the first block of the newly allocated space.
   int curr = fs_vcb->freespace_first;
   int next = freespace[fs_vcb->freespace_first];
   for (int i = 0; i < fs_vcb->freespace_avail - numberOfBlocks - 1; i++)
@@ -96,15 +99,26 @@ int alloc_free(int numberOfBlocks)
       perror("Freespace end flag encountered prematurely\n");
       return -1;
       }
+
+    // current block (at the end of the loop, this is the new final block of the
+    // free space)
     curr = next;
+
+    // next block (at the end of this loop, this is the beginning block of the
+    // newly allocated space)
     next = freespace[next];
     }
-  freespace[curr] = 0xFFFFFFFE;
-  fs_vcb->freespace_avail -= numberOfBlocks;
 
+  // set the final block of the free space map
+  freespace[curr] = 0xFFFFFFFE;
+  fs_vcb->freespace_avail -= numberOfBlocks; // reduce available free space
+
+  // return the index of the first block of the newly allocated space
   return next;
   }
 
+// this function restores all the free space for a file/directory; one step for
+// deleting files/directories.  returns the number of blocks returned to free space.
 int restore_free(DE *d_entry)
   {
   if (d_entry == NULL)
@@ -113,6 +127,7 @@ int restore_free(DE *d_entry)
     return -1;
     }
 
+  // find the last block of the free space
   int curr = fs_vcb->freespace_first;
   int next = freespace[fs_vcb->freespace_first];
   for (int i = 0; i < fs_vcb->freespace_avail - 1; i++)
@@ -122,15 +137,26 @@ int restore_free(DE *d_entry)
       perror("Freespace end flag encountered prematurely\n");
       return -1;
       }
+    
+    // current block (at the end of this loop, this is the final block of the
+    // free space)
     curr = next;
     next = freespace[next];
     }
+
+  // change the final block of the available free space to the beginning of the
+  // file/directory being deleted, which returns all of the space allocated to
+  // the file/directory back to the free space.
   freespace[curr] = d_entry->loc;
+
+  // increase available free space
   fs_vcb->freespace_avail += d_entry->num_blocks;
 
   return d_entry->num_blocks;
   }
 
+// this function restores extraneous empty blocks of a file/directory back to
+// free space.
 int restore_extra_free(DE *d_entry)
   {
   if (d_entry == NULL)
@@ -139,7 +165,8 @@ int restore_extra_free(DE *d_entry)
     return -1;
     }
 
-  // int new_num_blocks = d_entry->size / fs_vcb->block_size + 1;
+  // calculate the number of empty blocks to restore.  if the number of empty
+  // blocks is 4 or less, just leave the file as-is
   int new_num_blocks = get_num_blocks(d_entry->size, fs_vcb->block_size) + 4;
   int num_blocks_to_restore = d_entry->num_blocks - new_num_blocks;
   if (num_blocks_to_restore <= 0)
@@ -147,10 +174,13 @@ int restore_extra_free(DE *d_entry)
     return -1;
     }
 
+  // change the number of blocks to the new updates amount
   d_entry->num_blocks = new_num_blocks;
 
+  // retrieve the new last block of the file/directory
   int file_last_block = get_block(d_entry->loc, d_entry->num_blocks - 1);
 
+  // iterate through the free space to find the last block
   int curr = fs_vcb->freespace_first;
   int next = freespace[fs_vcb->freespace_first];
   for (int i = 0; i < fs_vcb->freespace_avail - 1; i++)
@@ -160,19 +190,26 @@ int restore_extra_free(DE *d_entry)
       perror("Freespace end flag encountered prematurely\n");
       return -1;
       }
+
+    // final block of the free space
     curr = next;
     next = freespace[next];
     }
 
+  // set the final block of free space to the block index of the block following
+  // the last block in the file
   freespace[curr] = freespace[file_last_block];
 
+  // set the final block of the file to the end flag
   freespace[file_last_block] = 0xFFFFFFFE;
 
+  // add the number of blocks restored back to the free space available
   fs_vcb->freespace_avail += num_blocks_to_restore;
 
   return num_blocks_to_restore;
   }
 
+// this function loads the free space map on the drive into memory
 int load_free()
   {
   int blocks_read = LBAread(freespace, fs_vcb->freespace_size, 1);
@@ -186,6 +223,8 @@ int load_free()
   return blocks_read;
   }
 
+// this function retrieves the block location at an offset from the block
+// location provided
 int get_block(long loc, int offset)
   {
   long curr = loc;
@@ -198,11 +237,13 @@ int get_block(long loc, int offset)
   return curr;
   }
 
+// this function retrieves the block location following the location provided
 int get_next_block(long loc)
   {
   return freespace[loc];
   }
 
+// print the free space map for debugging
 void print_free()
   {
   printf("=================== Printing Freespace Map ===================\n");

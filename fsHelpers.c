@@ -68,15 +68,18 @@ void write_dir(DE *dir_array)
 
 
 // sets the current working path
-char* set_cw_path()
+void set_cw_path()
   {
+  // malloc directory (DE array)
   int num_blocks = get_num_blocks(sizeof(DE) * DE_COUNT, fs_vcb->block_size);
   int num_bytes = num_blocks * fs_vcb->block_size;
   DE *dir_array = malloc(num_bytes);
 
+  // malloc an array of token pointers
   char **tok_array = malloc(MAX_PATH_LENGTH);
   int tok_count = 0;
 
+  // read the current working directory into memory
   LBAread(dir_array, cw_dir_array[0].num_blocks, cw_dir_array[0].loc);
 
   if (dir_array[0].loc == dir_array[1].loc)
@@ -85,13 +88,24 @@ char* set_cw_path()
     return cw_path;
     }
 
+  // load the current directory as the location we are searching for
   int search_loc = dir_array[0].loc;
   int path_size = 0;
+
+  // this loop ends when we reach the root directory
   while (dir_array[0].loc != dir_array[1].loc)
     {
+    // read the parent directory into memory as the current directory
     LBAread(dir_array, dir_array[1].num_blocks, dir_array[1].loc);
+
+    // iterate through the currently loaded directory to find the location
+    // matching the search_loc directory (the deeper directory)
     for (int i = 2; i < DE_COUNT; i++)
       {
+        // once the matching directory location is found in the parent
+        // directory, we copy the name of the directory into the token array.
+        // this should always succeed since we are traversing backward through
+        // the directory tree
         if (dir_array[i].loc == search_loc)
           {
           int size_of_name = strlen(dir_array[i].name) + 1;
@@ -101,10 +115,15 @@ char* set_cw_path()
           break;
           }
       }
+    
+    // set a new seach location for directory for the new parent directory
     search_loc = dir_array[0].loc;
     }
 
+  // malloc a string for the path
   char *path = malloc(path_size);
+
+  // construct the path string one token at a time
   strcpy(path, "/");
   for (int i = tok_count - 1; i >= 0; i--)
     {
@@ -117,16 +136,15 @@ char* set_cw_path()
       strcat(path, "/");
     }
 
+  // copy the path into the cw_path string
   strcpy(cw_path, path);
 
-  free(tok_array[0]);
-  tok_array[0] = NULL;
   free(dir_array);
   dir_array = NULL;
   free(tok_array);
   tok_array = NULL;
-
-  return path;
+  free(path);
+  path = NULL;
   }
 
 // helper function to get the last token/file/directory name from a path

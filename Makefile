@@ -35,7 +35,7 @@
 
 
 ROOTNAME=fsshell
-HW=
+HW=FileSystem
 FOPTION=
 RUNOPTIONS=SampleVolume 10000000 512
 CC=gcc

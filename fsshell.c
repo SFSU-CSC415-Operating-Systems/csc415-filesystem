@@ -35,7 +35,7 @@
 
 #define SINGLE_QUOTE	0x27
 #define DOUBLE_QUOTE	0x22
-#define BUFFERLEN			5179
+#define BUFFERLEN			200
 #define DIRMAX_LEN		4096
 
 /****   SET THESE TO 1 WHEN READY TO TEST THAT COMMAND ****/
@@ -343,8 +343,8 @@ int cmd_cp (int argcnt, char *argvec[])
 	char * dest;
 	int readcnt;
 	// initialize a random number between 100 and 10000 inclusive
-	int rnum = (rand() % 9901) + 100;
-	char buf[rnum];
+	// int rnum = (rand() % 9901) + 100;
+	char buf[BUFFERLEN];
 	
 	switch (argcnt)
 		{
@@ -368,9 +368,9 @@ int cmd_cp (int argcnt, char *argvec[])
 	testfs_dest_fd = b_open (dest, O_WRONLY | O_CREAT | O_TRUNC);
 	do 
 		{
-		readcnt = b_read (testfs_src_fd, buf, rnum);
+		readcnt = b_read (testfs_src_fd, buf, BUFFERLEN);
 		b_write (testfs_dest_fd, buf, readcnt);
-		} while (readcnt == rnum);
+		} while (readcnt == BUFFERLEN);
 	b_close (testfs_src_fd);
 	b_close (testfs_dest_fd);
 #endif
@@ -464,8 +464,8 @@ int cmd_cp2l (int argcnt, char *argvec[])
 	char * dest;
 	int readcnt;
 	// initialize a random number between 100 and 10000 inclusive
-	int rnum = (rand() % 9901) + 100;
-	char buf[rnum];
+	// int rnum = (rand() % 9901) + 100;
+	char buf[BUFFERLEN];
 	
 	switch (argcnt)
 		{
@@ -489,9 +489,9 @@ int cmd_cp2l (int argcnt, char *argvec[])
 	linux_fd = open (dest, O_WRONLY | O_CREAT | O_TRUNC, PERMISSIONS);
 	do 
 		{
-		readcnt = b_read (testfs_fd, buf, rnum);
+		readcnt = b_read (testfs_fd, buf, BUFFERLEN);
 		write (linux_fd, buf, readcnt);
-		} while (readcnt == rnum);
+		} while (readcnt == BUFFERLEN);
 	b_close (testfs_fd);
 	close (linux_fd);
 #endif
@@ -510,8 +510,8 @@ int cmd_cp2fs (int argcnt, char *argvec[])
 	char * dest;
 	int readcnt;
 	// initialize a random number between 100 and 10000 inclusive
-	int rnum = (rand() % 9901) + 100;
-	char buf[rnum];
+	// int rnum = (rand() % 9901) + 100;
+	char buf[BUFFERLEN];
 	
 	switch (argcnt)
 		{
@@ -534,10 +534,10 @@ int cmd_cp2fs (int argcnt, char *argvec[])
 	linux_fd = open (src, O_RDONLY);
 	do 
 		{
-		readcnt = read (linux_fd, buf, rnum);
+		readcnt = read (linux_fd, buf, BUFFERLEN);
 		buf[readcnt] = '\0';
 		int error = b_write (testfs_fd, buf, readcnt);
-		} while (readcnt == rnum);
+		} while (readcnt == BUFFERLEN);
 	b_close (testfs_fd);
 	close (linux_fd);
 #endif
